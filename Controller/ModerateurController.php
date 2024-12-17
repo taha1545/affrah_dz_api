@@ -1,5 +1,5 @@
 <?php 
-    require_once 'Models.php';
+ 
     require_once 'Controller.php';
 
 
@@ -45,14 +45,27 @@
 
 
      public function delete($id) {
-         
+        //
         $this->moderateur->delete($id,'id_mo');
-       
        //
        return "data deleted secc";
-
      }
  
+
+     public function ShowImage($id)
+     {
+       $image = $this->moderateur->findImage($id, 'id_mo');
+         //
+       if (isset($image['photo_mo'])) {
+         //
+           header('Content-Type: image/jpeg');
+           echo $image['photo_mo'];  
+       } else {
+         //
+           http_response_code(404);
+       }
+   
+     }
 
 
     }

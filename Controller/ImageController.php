@@ -1,5 +1,5 @@
 <?php
-     require_once 'Models.php';
+     
      require_once 'Controller.php';
 
    class ImageController extends Controller {

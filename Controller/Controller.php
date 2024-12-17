@@ -1,4 +1,6 @@
 <?php 
+  
+  require_once 'Services/Models.php';
  
 class Controller {
 
@@ -25,25 +27,25 @@ class Controller {
 
    public function __construct(){
 
-      $this->client= new Models('client',[],['photo_c']);
+      $this->client= new Models('client');
 
-      $this->membre=new Models('membre',[],['photo_m']);
+      $this->membre=new Models('membre');
         
-      $this->moderateur=new Models('moderateur',[],['photo_mo']) ;
+      $this->moderateur=new Models('moderateur') ;
 
-      $this->resarvation= new Models('reservation',[],[]);
+      $this->resarvation= new Models('reservation');
 
-      $this->annonce= new Models('annonce',[],[]);
+      $this->annonce= new Models('annonce');
 
-      $this->admin= new Models('admin',[],['photo_a']);
+      $this->admin= new Models('admin');
 
-      $this->favoris= new Models('favoris',[],[]);
+      $this->favoris= new Models('favoris');
 
-      $this->boost = new Models('boost',[],[]);
+      $this->boost = new Models('boost');
 
-      $this->contact = new Models('contact',[],[]);
+      $this->contact = new Models('contact');
 
-      $this ->images = new Models('images',[],[]);
+      $this ->images = new Models('images');
    }
       
 

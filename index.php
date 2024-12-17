@@ -1,4 +1,5 @@
 <?php
+
 // import controolers
     require_once 'Controller/ClientController.php';
     require_once 'Controller/MembreController.php';
@@ -10,7 +11,7 @@
     require_once 'Controller/BoostController.php';
     require_once 'Controller/ContactController.php';
     require_once 'Controller/ImageController.php';
-
+    
   // controller classes 10
   $ClientController=new ClientController();
   $membreController=new MembreController();
@@ -22,7 +23,6 @@
   $boostController= new BoostController();
   $contactController=new ContactController();
   $imagesController= new ImageController();
-
  
 // header type json and methode and url  and data sent with request and varible in url for fillter
     header('Content-Type: application/json'); 
@@ -37,8 +37,8 @@
           $rawInput = file_get_contents('php://input');
           $data = json_decode($rawInput, true) ?? [];
     }
-
-
+         
+ 
 // routing  
         switch (true) {
 
@@ -67,6 +67,12 @@
             $result=$ClientController->delete($id);
             break;
 
+            case (preg_match('/^client\/image\/(\d+)$/', $url, $matches) && $method === 'GET'):
+              $id = $matches[1]; 
+              $result=$ClientController->ShowImage($id);
+            break;
+          
+
 
 //membre
 
@@ -93,6 +99,11 @@
            $id = $matches[1];
            $result=$membreController->delete($id);
            break;
+
+           case (preg_match('/^membre\/image\/(\d+)$/', $url, $matches) && $method === 'GET'):
+            $id = $matches[1]; 
+            $result=$membreController->ShowImage($id);
+          break;     
      
 // moderateur
 
@@ -118,6 +129,11 @@
        case (preg_match('/^moderateur\/(\d+)$/', $url, $matches) && $method === 'DELETE'):
            $id = $matches[1];
            $result=$moderateurController->delete($id);
+
+           case (preg_match('/^moderateur\/image\/(\d+)$/', $url, $matches) && $method === 'GET'):
+            $id = $matches[1]; 
+            $result=$moderateurController->ShowImage($id);
+          break;     
     
 //resarvation
 
@@ -194,6 +210,11 @@
        case (preg_match('/^admin\/(\d+)$/', $url, $matches) && $method === 'DELETE'):
            $id = $matches[1];
            $result=$adminController->delete($id);
+
+           case (preg_match('/^admin\/image\/(\d+)$/', $url, $matches) && $method === 'GET'):
+            $id = $matches[1]; 
+            $result=$adminController->ShowImage($id);
+          break;     
 
 // favoris
     
@@ -298,12 +319,12 @@
        case (preg_match('/^images\/(\d+)$/', $url, $matches) && $method === 'DELETE'):
            $id = $matches[1];
            $result=$imagesController->delete($id);
-
-      
+       
+        
 
     default:
         http_response_code(404);
-        $result= ['error'=>'page not found '];
+        $result =['error'=>'page not found '];
         break;
 }
 

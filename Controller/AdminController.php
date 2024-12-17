@@ -1,5 +1,5 @@
 <?php 
-   require_once 'Models.php';
+
    require_once 'Controller.php';
 
 class AdminController extends Controller {
@@ -50,12 +50,21 @@ class AdminController extends Controller {
     
      }
  
-
-
-
-
-
-
+    
+     public function ShowImage($id)
+     {
+       $image = $this->admin->findImage($id, 'id_a');
+         //
+       if (isset($image['photo_a'])) {
+         //
+           header('Content-Type: image/jpeg');
+           echo $image['photo_a'];  
+       } else {
+         //
+           http_response_code(404);
+       }
+   
+     }
 
 
 

@@ -1,12 +1,13 @@
 <?php
-    require_once 'Models.php';
+    
     require_once 'Controller.php';
+    require_once 'Services/Collection.php';
 
   class ClientController extends Controller {    
 
       public function index (){
  
-         return $this->client->all();
+         return Collection::returnClients($this->client->all());
 
       }
 
@@ -49,6 +50,26 @@
         return "data deleted secc";
 
       }
+
+    
+
+    public function ShowImage($id)
+  {
+    $image = $this->client->findImage($id, 'id_c');
+      //
+    if (isset($image['photo_c'])) {
+      //
+        header('Content-Type: image/jpeg');
+        echo $image['photo_c'];  
+    } else {
+      //
+        http_response_code(404);
+    }
+
+  }
+
+      
+      
 
 
 
