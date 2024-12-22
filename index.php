@@ -28,17 +28,16 @@
     header('Content-Type: application/json'); 
     $url = trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
     $method = $_SERVER['REQUEST_METHOD'];
-
+   //
    $query = [];
    parse_str($_SERVER['QUERY_STRING'] ?? '', $query);
-
+    //
     $data = [];
     if ($method === 'POST' || $method === 'PUT' || $method === 'DELETE') {
           $rawInput = file_get_contents('php://input');
           $data = json_decode($rawInput, true) ?? [];
     }
-         
- 
+   
 // routing  
         switch (true) {
 
@@ -210,7 +209,7 @@
        case (preg_match('/^admin\/(\d+)$/', $url, $matches) && $method === 'DELETE'):
            $id = $matches[1];
            $result=$adminController->delete($id);
-
+           break;
            case (preg_match('/^admin\/image\/(\d+)$/', $url, $matches) && $method === 'GET'):
             $id = $matches[1]; 
             $result=$adminController->ShowImage($id);
@@ -319,7 +318,8 @@
        case (preg_match('/^images\/(\d+)$/', $url, $matches) && $method === 'DELETE'):
            $id = $matches[1];
            $result=$imagesController->delete($id);
-       
+
+     
         
 
     default:

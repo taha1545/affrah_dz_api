@@ -37,17 +37,17 @@ class Models {
             'id_fav', 'id_c', 'id_m'
         ],
         // 
-        'moderateur' => [
-             'id_mo','nom_mo', 'email_mo', 'tel_mo', 'mdp_mo'
-        ],
+        'moderateur' => ['id_mo', 'nom_mo', 'prenom_mo', 'email_mo', 'tel_mo', 'mdp_mo', 'id_a'],
+
          //
         'reservation' => [
             'id_r', 'date_res', 'nbr_invite', 'etat_res', 'id_c', 'id_m', 'id_an'
         ],
         //
         'membre' => [
-            'id_m', 'nom_m', 'email_m', 'tel_m', 'mdp_m', 'etat_m', 'id_a', 'signale'
-        ]
+            'id_m', 'nom_m', 'email_m', 'ville_m', 'adresse_m', 'tel_m', 'mobil_m', 'mdp_m', 
+            'etat_m', 'id_a', 'signale','id_mo'
+        ],
     ];
     
 
@@ -106,8 +106,7 @@ class Models {
         if ($result){
             return $result;
         }else{
-            http_response_code(404);
-           return ['error'=>' resource not found'];
+            throw new Exception('no resource found');
         }
     }
     
@@ -231,6 +230,7 @@ class Models {
     
 
     public function delete($id, $key) {
+        
         $sql = "DELETE FROM {$this->tablename} WHERE {$key} = ?";
         $stmt = $this->conn->prepare($sql);
         $stmt->bind_param("i", $id);
