@@ -30,13 +30,13 @@ class Validator {
             'city' => ['required', 'string', 'max:255'],
             'address' => ['required', 'string', 'max:255'],
             'creationDate' => ['required', 'date'],
-            'phone' => ['nullable', 'string', 'max:30'],
+            'phone' => ['required', 'string', 'max:30'],
             'mobile' => ['required', 'string', 'max:30'],
             'price' => ['nullable', 'numeric'],
             'details' => ['nullable', 'string', 'max:255'],
             'etat' => ['required', 'string', 'in:attente,active,inactive'],
-            'idAdmin' => ['nullable', 'integer', 'exists:admin,id_a'],
-            'idModerateur' => ['nullable', 'integer', 'exists:moderateur,id_mo'],
+            'idAdmin' => ['required', 'integer', 'exists:admin,id_a'],
+            'idModerateur' => ['required', 'integer', 'exists:moderateur,id_mo'],
             'idMember' => ['required', 'integer', 'exists:membre,id_m'],
             'pricingNature' => ['nullable', 'string', 'max:255'],
             'visits' => ['nullable', 'integer'],
@@ -46,7 +46,7 @@ class Validator {
         'boost' => [
             'duration' => ['required', 'integer'],
             'price' => ['required', 'numeric'],
-            'state' => ['required', 'string', 'in:attente,active,inactive'],
+            'etat' => ['required', 'string', 'in:attente,active,inactive'],
             'idMember' => ['required', 'integer', 'exists:membre,id_m'],
             'idAnnonce' => ['required', 'integer', 'exists:annonce,id_an'],
             'creationDate' => ['required', 'date'],
@@ -55,14 +55,14 @@ class Validator {
     
         'contact' => [
             'name' => ['nullable', 'string', 'max:255'],
-            'email' => ['nullable', 'email', 'max:255'],
+            'email' => ['required', 'email', 'max:255'],
             'message' => ['required', 'string', 'max:255'],
-            'phone' => ['nullable', 'string', 'max:30'],
-            'subject' => ['nullable', 'string', 'max:255'],
-            'genre' => ['nullable', 'string', 'in:male,female'],
-            'idMember' => ['nullable', 'integer', 'exists:membre,id_m'],
-            'idClient' => ['nullable', 'integer', 'exists:client,id_c'],
-            'idModerateur' => ['nullable', 'integer', 'exists:moderateur,id_mo'],
+            'phone' => ['required', 'string', 'max:30'],
+            'subject' => ['required', 'string', 'max:255'],
+            'genre' => ['required', 'string'],
+            'idMember' => ['required', 'integer', 'exists:membre,id_m'],
+            'idClient' => ['required', 'integer', 'exists:client,id_c'],
+            'idModerateur' => ['required', 'integer', 'exists:moderateur,id_mo'],
         ],
     
         'favorite' => [
@@ -80,14 +80,19 @@ class Validator {
         'idAdmin' => ['required', 'integer', 'exists:admin,id_a'],
          ],
     
-        'reservation' => [
-            'reservationDate' => ['required', 'date'],
-            'numberOfGuests' => ['required', 'integer'],
-            'state' => ['required', 'string', 'in:attente,active,inactive'],
-            'idClient' => ['required', 'integer', 'exists:client,id_c'],
-            'idMember' => ['required', 'integer', 'exists:membre,id_m'],
-            'idAnnonce' => ['required', 'integer', 'exists:annonce,id_an'],
-        ],
+       'reservation' => [
+    'reservationDate' => ['required', 'date'],
+    'finalreservationDate' => ['required', 'date'],
+    'name' => ['required', 'string', 'max:255'],
+    'email' => ['required', 'string', 'email', 'max:255'],
+    'phone' => ['required', 'string', 'max:30'],
+    'type' => ['required', 'string', 'max:255'],
+     'date'=>['required', 'date'],
+    'etat' => ['required', 'string', 'in:attente,active,inactive'],
+    'idClient' => ['required', 'integer', 'exists:client,id_c'],
+    'idMember' => ['required', 'integer', 'exists:membre,id_m'],
+    'idAnnonce' => ['required', 'integer', 'exists:annonce,id_an'],
+      ],
     
         'member' => [
             'name' => ['required', 'string', 'min:4', 'max:100'],
@@ -145,6 +150,78 @@ class Validator {
             'banned' => [ 'string', 'in:non,oui'], 
             'idModerateur' => [ 'integer', 'exists:moderateur,id_mo'], 
         ],
+        'updatecontact' => [
+            'name' => ['string', 'max:255'],
+            'email' => ['email', 'max:255'],
+            'message' => ['string', 'max:255'],
+            'phone' => ['string', 'max:30'],
+            'subject' => [ 'string', 'max:255'],
+            'genre' => [ 'string', 'in:male,female'],
+            'idMember' => [ 'integer', 'exists:membre,id_m'],
+            'idClient' => [ 'integer', 'exists:client,id_c'],
+            'idModerateur' => ['integer', 'exists:moderateur,id_mo'],
+        ],
+        'updateannonce' => [
+            'name' => ['string', 'max:255'],
+            'category' => ['string', 'max:255'],
+            'eventType' => ['string', 'max:255'],
+            'city' => [ 'string', 'max:255'],
+            'address' => [ 'string', 'max:255'],
+            'creationDate' => [ 'date'],
+            'phone' => [ 'string', 'max:30'],
+            'mobile' => [ 'string', 'max:30'],
+            'price' => ['numeric'],
+            'details' => [ 'string', 'max:255'],
+            'etat' => ['string', 'in:attente,active,inactive'],
+            'idAdmin' => [ 'integer', 'exists:admin,id_a'],
+            'idModerateur' => [ 'integer', 'exists:moderateur,id_mo'],
+            'idMember' => [ 'integer', 'exists:membre,id_m'],
+            'pricingNature' => [ 'string', 'max:255'],
+            'visits' => [ 'integer'],
+            'likes' => [ 'integer'],
+        ],
+        'updateboost' => [
+            'duration' => ['integer'],
+            'price' => ['numeric'],
+            'state' => [ 'string', 'in:attente,active,inactive'],
+            'idMember' => [ 'integer', 'exists:membre,id_m'],
+            'idAnnonce' => ['integer', 'exists:annonce,id_an'],
+            'creationDate' => [ 'date'],
+            'idModerateur' => [ 'integer', 'exists:moderateur,id_mo'],
+        ],
+        'updatefavorite' => [
+            'idAnnonce' => [ 'integer', 'exists:annonce,id_an'],
+            'idClient' => [ 'integer', 'exists:client,id_c'],
+            'idMember' => ['integer', 'exists:membre,id_m'],
+        ],
+        'updatereservation' => [
+            'reservationDate' => ['date'],
+            'finalreservationDate' => [ 'date', 'after_or_equal:date_r_debut'],
+            'name' => ['string', 'max:255'],
+            'email' => [ 'string', 'email', 'max:255'],
+            'phone' => [ 'string', 'max:30'],
+            'type' => ['string', 'max:255'],
+            'etat' => [ 'string', 'in:attente,active,inactive'],
+            'idClient' => [ 'integer', 'exists:client,id_c'],
+            'idMember' => [ 'integer', 'exists:membre,id_m'],
+            'idAnnonce' => [ 'integer', 'exists:annonce,id_an'],
+              ],
+           'images'=>[
+              'name'=>['required','string','max:255'],
+              'size'=>['required','integer'],
+              'type'=>['required','string','max:255'],
+              'path'=>['required','string','max:255'],
+              'date'=>['required','date'],
+              'idAnnonce' => ['required','integer', 'exists:annonce,id_an'],
+           ],   
+           'updateimages'=>[
+            'name'=>['string','max:255'],
+            'size'=>['integer'],
+            'type'=>['string','max:255'],
+            'path'=>['string','max:255'],
+            'date'=>['date'],
+            'idAnnonce' => ['integer', 'exists:annonce,id_an'],
+           ]
     ];
     
     //
@@ -246,7 +323,7 @@ class Validator {
                           $model= new Models($uniqueTable);
                           try{
                               $result=$model->find($value,$uniqueColumn); 
-                              $errors[$field][] = "The {$field} must be unique in {$uniqueTable}.";
+                              $errors[$field][] = "The {$field} already existe";
                           }catch(Exception){
                             http_response_code(200);
                           }
@@ -260,7 +337,7 @@ class Validator {
                         try{
                         $result = $model->find($value, $existsColumn);
                         }catch(Exception){
-                            $errors[$field][] = "The {$field} must exist in {$existsTable}.";
+                            $errors[$field][] = "The {$field} must exist before";
                         }
                         break;          
                 }

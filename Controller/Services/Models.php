@@ -7,7 +7,8 @@ class Models {
         'client'=>['photo_c'],
         'admin'=>['photo_a'],
         'membre'=>['photo_m'],
-        'moderateur'=>['photo_mo']
+        'moderateur'=>['photo_mo'],
+        'boost'=>['recu_b']
     ];
     protected $conn;
     protected $Columns = [
@@ -19,35 +20,38 @@ class Models {
         'admin' => [
             'id_a','nom_a', 'email_a', 'tel_a', 'mdp_a'
         ],
-        // ANNONCE
+        // annonce
         'annonce' => [
             'id_an', 'nom_an', 'categorie_an', 'type_fete', 'ville_an', 'adresse_an', 'date_cr', 'tel_an', 'mobile_an',
-            'tarif_an', 'detail_an', 'etat_an', 'id_a', 'id_mo', 'id_m', 'nature_tarif', 'visites', 'jaime'
+            'tarif_an', 'detail_an', 'etat_an', 'id_a', 'id_mo', 'id_m', 'nature_tarif', 'visites', 'jaime','file_path'
         ],
-        // BOOST
+        // boost
         'boost' => [
              'id_b','duree_b', 'tarif_b', 'etat_b', 'id_m', 'id_an', 'date_cr_b', 'id_mo'
         ],
-        // 
+        // conatct
         'contact' => [
             'id', 'nom', 'email', 'msg', 'tel', 'sujet', 'genre', 'id_m', 'id_c', 'id_mo'
         ],
-        // 
+        // favoris
         'favorite' => [
-            'id_fav', 'id_c', 'id_m'
+            'id_fav', 'id_c', 'id_m','id_an'
         ],
-        // 
+        // moderateur
         'moderateur' => ['id_mo', 'nom_mo', 'prenom_mo', 'email_mo', 'tel_mo', 'mdp_mo', 'id_a'],
 
-         //
-        'reservation' => [
-            'id_r', 'date_res', 'nbr_invite', 'etat_res', 'id_c', 'id_m', 'id_an'
-        ],
-        //
+         //resarvation
+        'reservation' =>['id_r', 'date_r_debut', 'date_r_fin', 'nom_c_r', 'email_c_r', 'tel_c_r', 'type_fete', 'etat_r', 'date_cr', 'id_an', 'id_m', 'id_c'],
+        
+        //membre
         'membre' => [
             'id_m', 'nom_m', 'email_m', 'ville_m', 'adresse_m', 'tel_m', 'mobil_m', 'mdp_m', 
             'etat_m', 'id_a', 'signale','id_mo'
         ],
+        //images
+        'images'=>[
+            'id_img','nom_img','taille_img','type_img','chemin_img','date_cr','id_an '
+        ]
     ];
     
 
@@ -241,6 +245,9 @@ class Models {
     
         if (!$stmt->execute()) {
             throw new Exception("Execution Error: " . $stmt->error);
+        }
+        if($stmt->affected_rows <= 0){
+            THROW NEW Exception('NO DATA FOUND TO DELETE');
         }
     
         return $stmt->affected_rows > 0; 

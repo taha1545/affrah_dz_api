@@ -128,6 +128,7 @@
        case (preg_match('/^moderateur\/(\d+)$/', $url, $matches) && $method === 'DELETE'):
            $id = $matches[1];
            $result=$moderateurController->delete($id);
+           break;
 
            case (preg_match('/^moderateur\/image\/(\d+)$/', $url, $matches) && $method === 'GET'):
             $id = $matches[1]; 
@@ -158,6 +159,7 @@
        case (preg_match('/^resarvation\/(\d+)$/', $url, $matches) && $method === 'DELETE'):
            $id = $matches[1];
            $result=$resarvationController->delete($id);
+           break;
 
 //annonce
 
@@ -183,6 +185,7 @@
        case (preg_match('/^annonce\/(\d+)$/', $url, $matches) && $method === 'DELETE'):
            $id = $matches[1];
            $result=$annonceController->delete($id);
+            break;
 
 
 //admin 
@@ -239,6 +242,7 @@
        case (preg_match('/^favoris\/(\d+)$/', $url, $matches) && $method === 'DELETE'):
            $id = $matches[1];
            $result=$favorisController->delete($id);
+           break;
       
      
 
@@ -266,6 +270,12 @@
        case (preg_match('/^boost\/(\d+)$/', $url, $matches) && $method === 'DELETE'):
            $id = $matches[1];
            $result=$boostController->delete($id);
+           break;
+
+           case (preg_match('/^boost\/image\/(\d+)$/', $url, $matches) && $method === 'GET'):
+            $id = $matches[1]; 
+            $result=$boostController->ShowImage($id);
+          break;
 
 
 //contact
@@ -292,6 +302,7 @@
        case (preg_match('/^contact\/(\d+)$/', $url, $matches) && $method === 'DELETE'):
            $id = $matches[1];
            $result=$contactController->delete($id);
+           break;
 
 
 //images   
@@ -318,6 +329,7 @@
        case (preg_match('/^images\/(\d+)$/', $url, $matches) && $method === 'DELETE'):
            $id = $matches[1];
            $result=$imagesController->delete($id);
+           break;
 
      
         

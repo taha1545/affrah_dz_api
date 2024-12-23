@@ -12,6 +12,13 @@ class Collection {
         }
         return $clients;
     }
+    public static function returnImages($data) {
+        $images = [];
+        foreach ($data as $image) {
+            $images[] = Resource::ReturnImages($image);
+        }
+        return $images;
+    }
 
     // ADMINS
     public static function returnAdmins($data) {

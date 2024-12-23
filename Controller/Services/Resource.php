@@ -92,15 +92,18 @@ class Resource {
             'date_cr' => $data['creationDate'],
             'tel_an' => $data['phone'],
             'mobile_an' => $data['mobile'],
-            'tarif_an' => $data['price'],
-            'detail_an' => $data['details'],
+            'tarif_an' => $data['price'] ??null,
+            'detail_an' => $data['details'] ??null,
             'etat_an' => $data['etat'],
             'id_a' => $data['idAdmin'],
             'id_mo' => $data['idModerateur'],
             'id_m' => $data['idMember'],
-            'nature_tarif' => $data['pricingNature'],
-            'visites' => $data['visits'],
-            'jaime' => $data['likes']
+            'nature_tarif' => $data['pricingNature'] ?? null,
+            'visites' => $data['visits'] ?? 0,
+            'jaime' => $data['likes'] ?? 0,
+            'file_name'=>'non',
+            'file_path'=>'/',
+            'file_size'=>0
         ];
     }
 
@@ -137,7 +140,8 @@ class Resource {
             'id_m' => $data['idMember'],
             'id_an' => $data['idAnnonce'],
             'date_cr_b' => $data['creationDate'],
-            'id_mo' => $data['idModerateur']
+            'id_mo' => $data['idModerateur'],
+            'recu_b'=>$data['image'] ?? "ahsuiah"
         ];
     }
 
@@ -158,15 +162,15 @@ class Resource {
     // CONTACT
     public static function GetContact($data){
         return [
-            'nom' => $data['name'],
-            'email' => $data['email'],
+            'nom' => $data['name'] ??null,
+            'email' => $data['email']??null,
             'msg' => $data['message'],
-            'tel' => $data['phone'],
-            'sujet' => $data['subject'],
-            'genre' => $data['genre'],
-            'id_m' => $data['idMember'],
-            'id_c' => $data['idClient'],
-            'id_mo' => $data['idModerateur']
+            'tel' => $data['phone']??null,
+            'sujet' => $data['subject']??null,
+            'genre' => $data['genre']??null,
+            'id_m' => $data['idMember']??null,
+            'id_c' => $data['idClient']??null,
+            'id_mo' => $data['idModerateur']??null,
         ];
     }
 
@@ -234,29 +238,40 @@ class Resource {
         
  
      // RESERVATION
-     public static function GetReservation($data){
-         return [
-             'date_res' => $data['reservationDate'],
-             'nbr_invite' => $data['numberOfGuests'],
-             'etat_res' => $data['etat'],
-             'id_c' => $data['idClient'],
-             'id_m' => $data['idMember'],
-             'id_an' => $data['idAnnonce']
-         ];
-     }
- 
-     public static function ReturnReservation($data){
-         $data = (array) $data;
-         return [
-            'id'=>(int)$data['id_r'],
-             'reservationDate' => $data['date_res'],
-             'numberOfGuests' => (int)$data['nbr_invite'],
-             'etat' => $data['etat_res'],
-             'idClient' =>(int) $data['id_c'],
-             'idMember' =>(int) $data['id_m'],
-             'idAnnonce' =>(int) $data['id_an']
-         ];
-     }
+     public static function GetReservation($data) {
+        return [
+            'date_r_debut' => $data['reservationDate'],
+            'date_r_fin' => $data['finalreservationDate'],
+            'nom_c_r' => $data['name'],
+            'email_c_r' => $data['email'],
+            'tel_c_r' => $data['phone'],
+            'type_fete' => $data['type'],
+            'etat_r' => $data['etat'],
+            'date_cr'=>$data['date'],
+            'id_c' => $data['idClient'],
+            'id_m' => $data['idMember'],
+            'id_an' => $data['idAnnonce']
+        ];
+    }
+    
+    public static function ReturnReservation($data) {
+        $data = (array) $data;
+        return [
+            'id' => (int)$data['id_r'],
+            'reservationDate' => $data['date_r_debut'],
+            'finalreservationDate' => $data['date_r_fin'],
+            'name' => $data['nom_c_r'],
+            'email' => $data['email_c_r'],
+            'phone' => $data['tel_c_r'],
+            'type' => $data['type_fete'],
+            'etat' => $data['etat_r'],
+            'date'=>$data['date_cr'],
+            'idClient' => (int)$data['id_c'],
+            'idMember' => (int)$data['id_m'],
+            'idAnnonce' => (int)$data['id_an']
+        ];
+    }
+    
  
      // MEMBRE
      public static function GetMembre($data){
@@ -395,12 +410,17 @@ public static function UpdateModerateur($data) {
 // RESERVATION
 public static function UpdateReservation($data) {
     $newdata = [
-        'date_res' => $data['reservationDate'] ?? null,
-        'nbr_invite' => $data['numberOfGuests'] ?? null,
-        'etat_res' => $data['etat'] ?? null,
-        'id_c' => $data['idClient'] ?? null,
-        'id_m' => $data['idMember'] ?? null,
-        'id_an' => $data['idAnnonce'] ?? null,
+        'date_r_debut' => $data['reservationDate']??null,
+            'date_r_fin' => $data['finalreservationDate']??null,
+            'nom_c_r' => $data['name']??null,
+            'email_c_r' => $data['email']??null,
+            'tel_c_r' => $data['phone']??null,
+            'type_fete' => $data['type']??null,
+            'etat_r' => $data['etat']??null,
+            'date_cr'=>$data['date']??null,
+            'id_c' => $data['idClient']??null,
+            'id_m' => $data['idMember']??null,
+            'id_an' => $data['idAnnonce']??null
     ];
 
     return array_filter($newdata, fn($value) => $value !== null);
@@ -425,6 +445,44 @@ public static function UpdateMembre($data) {
 
     return array_filter($newdata, fn($value) => $value !== null);
 }
+
+  public static function  GetImages($data){
+    return [
+        'nom_img'=>$data['name'],
+        'taille_img'=>$data['size'],
+        'type_img'=>$data['type'],
+        'chemin_img'=>$data['path'],
+        'date_cr'=>$data['date'],
+        'id_an' =>$data['idAnnonce'],
+    ];
+  }
+  public static function  UpdateImages($data){
+    $newdata = [
+        'nom_img'=>$data['name']??null,
+        'taille_img'=>$data['size']??null,
+        'type_img'=>$data['type']??null,
+        'chemin_img'=>$data['path']??null,
+        'date_cr'=>$data['date']??null,
+        'id_an' =>$data['idAnnonce']??null,
+    ];
+    // Filter out null values
+    $newdata = array_filter($newdata, function ($value) {
+        return $value !== null;
+    });
+    return $newdata;
+  }
+
+  public static function ReturnImages($data){
+    return[
+        'id'=>$data['id_img'],
+        'name'=>$data['nom_img']??null,
+        'size'=>$data['taille_img']??null,
+        'type'=>$data['type_img']??null,
+        'path'=>$data['chemin_img']??null,
+        'date'=>$data['date_cr']??null,
+        'idAnnonce' =>$data['id_an']??null,
+    ];
+  }
 
 
 }
