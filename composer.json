@@ -1,5 +1,6 @@
 {
     "require": {
-        "aura/autoload": "^2.0"
+        "aura/autoload": "^2.0",
+        "firebase/php-jwt": "^6.10"
     }
 }

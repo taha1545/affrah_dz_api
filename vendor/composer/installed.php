@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => '__root__',
-        'pretty_version' => 'dev-master',
-        'version' => 'dev-master',
-        'reference' => 'd51fcab6f4c57ab714e032995c83df9513880dd3',
+        'pretty_version' => 'dev-main',
+        'version' => 'dev-main',
+        'reference' => '0f5bbca9a84b573361c87714cfd1f2762f42f572',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         '__root__' => array(
-            'pretty_version' => 'dev-master',
-            'version' => 'dev-master',
-            'reference' => 'd51fcab6f4c57ab714e032995c83df9513880dd3',
+            'pretty_version' => 'dev-main',
+            'version' => 'dev-main',
+            'reference' => '0f5bbca9a84b573361c87714cfd1f2762f42f572',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
@@ -25,6 +25,15 @@
             'reference' => '306a7f8d3cb58fb6f94bcff1dddf20c543f68668',
             'type' => 'library',
             'install_path' => __DIR__ . '/../aura/autoload',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'firebase/php-jwt' => array(
+            'pretty_version' => 'v6.10.2',
+            'version' => '6.10.2.0',
+            'reference' => '30c19ed0f3264cb660ea496895cfb6ef7ee3653b',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../firebase/php-jwt',
             'aliases' => array(),
             'dev_requirement' => false,
         ),

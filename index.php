@@ -1,4 +1,5 @@
 <?php
+  require_once __DIR__ . '/vendor/autoload.php';
 // import controolers
     require_once 'Controller/ClientController.php';
     require_once 'Controller/MembreController.php';
@@ -10,6 +11,7 @@
     require_once 'Controller/BoostController.php';
     require_once 'Controller/ContactController.php';
     require_once 'Controller/ImageController.php';
+    require_once 'Controller/Services/auth.php';
   // controller classes 10
   $ClientController=new ClientController();
   $membreController=new MembreController();
@@ -337,14 +339,14 @@
            $result=$imagesController->delete($id);
            break;
 
-         //test   
+        //test   
 
         case($url =='test'):
-          $result=[
-            'url'=>$url,
-           'methode'=>$method,
-           'data'=>$data,
-             ];
+         $result=[
+          'url'=>$url,
+          'data'=>$data
+         ];
+         
         break;
         
        // error
