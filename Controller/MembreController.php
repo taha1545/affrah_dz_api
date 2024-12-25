@@ -6,7 +6,7 @@
 
     class MembreController  extends Controller {
 
-   
+      //login + auth
       public function index()
       {
         try {
@@ -50,6 +50,8 @@
       //validation
        $valid=new Validator ();
        $data=$valid->validateData($data,'member');
+        //image validation
+        $valid->ValideImage($data['image']);
       //resource
        $data=Resource::GetMembre($data);
       //create  

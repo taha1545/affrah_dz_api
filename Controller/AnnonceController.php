@@ -3,8 +3,11 @@
   require_once 'Services/Collection.php';
   require_once 'Services/Resource.php';
   require_once 'Services/Validator.php';
+  require_once 'Services/UploadVideo.php';
 
  class AnnonceController  extends Controller{
+
+  // with(images,boost) + filter
    
   public function index()
   {
@@ -12,7 +15,7 @@
         $data = $this->annonce->all();
         return [
             'status' => 'success',
-            'message' => 'data retrieved successfully',
+            'message' => 'data retrieved successfully', 
             'data' => Collection::returnAnnounces($data)
         ];
     } catch (Exception $e) {
@@ -46,10 +49,20 @@
 
   public function create($data){
     try{
-  //validation
+  //validation of data
    $valid=new Validator ();
    $data=$valid->validateData($data,'annonce');
-  //resource
+   //validation of videos
+      $valid::ValideVideo(video:$data['video1']);
+      if(isset($data['video2'])){
+        $valid::ValideVideo(video: $data['video2']);
+      }
+    //create vedio
+       $data['video1']=UploadVideo::CreateVideo($data['video1']); 
+       if(isset($data['video2'])){
+        $data['video2']=UploadVideo::CreateVideo($data['video2']); 
+       }
+    //resource
    $data=Resource::GetAnnonce($data);
   //create  
    $this->annonce->create($data);
@@ -66,7 +79,7 @@
        ];
    } 
 }
-    
+
 
 public function update($id, $data)
 {

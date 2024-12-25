@@ -15,7 +15,7 @@ class Resource {
             'signale' => $data['banned'],
             'id_a' => $data['idAdmin'],
             'id_mo' => $data['idModerateur'],
-            'photo_c'=>$data['image'] ?? "kmsakakm"
+            'photo_c'=>file_get_contents($data['image']['tmp_name']) ?? "noimageprovided"
         ];
     }
     public static function UpdateClient($data)
@@ -31,7 +31,7 @@ class Resource {
             'signale' => $data['banned'] ?? null,
             'id_a' => $data['idAdmin'] ?? null,
             'id_mo' => $data['idModerateur'] ?? null,
-            'photo_c' => $data['image'] ?? "kdksdsjk",
+           'photo_c'=>file_get_contents($data['image']['tmp_name']) ?? null
         ];
     
         // Filter out null values
@@ -66,7 +66,7 @@ class Resource {
             'email_a' => $data['email'],
             'tel_c' => $data['phone'],
             'mdp_a' =>  password_hash($data['password'], PASSWORD_BCRYPT),
-            'photo_a'=>$data['image'] ?? "jhdskhsjls"
+            'photo_a'=>file_get_contents($data['image']['tmp_name']) ?? "noimageprovided"
         ];
     }
 
@@ -101,9 +101,12 @@ class Resource {
             'nature_tarif' => $data['pricingNature'] ?? null,
             'visites' => $data['visits'] ?? 0,
             'jaime' => $data['likes'] ?? 0,
-            'file_name'=>'non',
-            'file_path'=>'/',
-            'file_size'=>0
+            'file_name'=>$data['video1']['name'],
+            'file_path'=>$data['video1']['path'],
+            'file_size'=>$data['video1']['size'],
+            'file_name_video'=>$data['video2']['name'] ?? null,
+            'file_path_video'=>$data['video2']['path'] ?? null ,
+            'file_size_video'=>$data['video2']['size'] ?? null
         ];
     }
 
@@ -127,7 +130,9 @@ class Resource {
             'idMember' => (int)$data['id_m'],
             'pricingNature' => $data['nature_tarif'],
             'visits' => (int)$data['visites'],
-            'likes' =>(int) $data['jaime']
+            'likes' =>(int) $data['jaime'],
+            'video1_full_path'=> $data['file_path'].$data['file_name'],
+             'video2_full_path'=> $data['file_path_video'].$data['file_name_video'] ?? null,
         ];
     }
 
@@ -141,7 +146,7 @@ class Resource {
             'id_an' => $data['idAnnonce'],
             'date_cr_b' => $data['creationDate'],
             'id_mo' => $data['idModerateur'],
-            'recu_b'=>$data['image'] ?? "ahsuiah"
+             'recu_b'=>file_get_contents($data['image']['tmp_name']) ?? "noimageprovided"
         ];
     }
 
@@ -218,7 +223,7 @@ class Resource {
                 'tel_mo' => $data['phone'],
                 'mdp_mo' => password_hash($data['password'], PASSWORD_BCRYPT),
                 'id_a' => $data['idAdmin'], 
-                'photo_mo'=>$data['image'] ??"345676543"
+                'photo_mo'=>file_get_contents($data['image']['tmp_name']) ?? "noimageprovided"
             ];
         }
         
@@ -287,7 +292,7 @@ class Resource {
              'id_a' => $data['idAdmin'],
              'signale' => $data['banned'],
              'id_mo'=>$data['idModerateur'],
-             'photo_m'=>$data['image'] ?? "2345678987dfghjkjhgfd"
+              'photo_m'=>file_get_contents($data['image']['tmp_name']) ?? "noimageprovided"
          ];
      }
  
@@ -319,7 +324,6 @@ public static function UpdateAdmin($data) {
         'email_a' => $data['email'] ?? null,
         'tel_c' => $data['phone'] ?? null,
         'mdp_a' => isset($data['password']) ? password_hash($data['password'], PASSWORD_BCRYPT) : null,
-        'photo_a'=>$data['image'] ??  null 
     ];
 
     return array_filter($newdata, fn($value) => $value !== null);
@@ -402,7 +406,6 @@ public static function UpdateModerateur($data) {
         'tel_mo' => $data['phone'],
         'mdp_mo' => password_hash($data['password'], PASSWORD_BCRYPT),
         'id_a' => $data['idAdmin'], 
-        'photo_mo'=>$data['image'] ??"345676543"
     ];
 
     return array_filter($newdata, fn($value) => $value !== null);
@@ -448,22 +451,22 @@ public static function UpdateMembre($data) {
 
   public static function  GetImages($data){
     return [
-        'nom_img'=>$data['name'],
-        'taille_img'=>$data['size'],
-        'type_img'=>$data['type'],
-        'chemin_img'=>$data['path'],
-        'date_cr'=>$data['date'],
+        'nom_img'=>$data['image']['name'],
+        'taille_img'=>$data['image']['size'],
+        'type_img'=>$data['image']['type'],
+        'chemin_img'=>$data['image']['path'],
+        'date_cr'=>date('y-m-d  h:m:s'),
         'id_an' =>$data['idAnnonce'],
     ];
   }
   public static function  UpdateImages($data){
     $newdata = [
-        'nom_img'=>$data['name']??null,
-        'taille_img'=>$data['size']??null,
-        'type_img'=>$data['type']??null,
-        'chemin_img'=>$data['path']??null,
-        'date_cr'=>$data['date']??null,
-        'id_an' =>$data['idAnnonce']??null,
+        'nom_img'=>$data['image']['name'],
+        'taille_img'=>$data['image']['size'],
+        'type_img'=>$data['image']['type'],
+        'chemin_img'=>$data['image']['path'],
+        'date_cr'=>date('y-m-d h:m:s'),
+        'id_an' =>$data['idAnnonce']?? null,
     ];
     // Filter out null values
     $newdata = array_filter($newdata, function ($value) {
@@ -475,11 +478,7 @@ public static function UpdateMembre($data) {
   public static function ReturnImages($data){
     return[
         'id'=>$data['id_img'],
-        'name'=>$data['nom_img']??null,
-        'size'=>$data['taille_img']??null,
-        'type'=>$data['type_img']??null,
-        'path'=>$data['chemin_img']??null,
-        'date'=>$data['date_cr']??null,
+        'image_path'=>$data['chemin_img'].$data['nom_img'],
         'idAnnonce' =>$data['id_an']??null,
     ];
   }

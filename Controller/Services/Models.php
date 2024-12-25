@@ -23,7 +23,8 @@ class Models {
         // annonce
         'annonce' => [
             'id_an', 'nom_an', 'categorie_an', 'type_fete', 'ville_an', 'adresse_an', 'date_cr', 'tel_an', 'mobile_an',
-            'tarif_an', 'detail_an', 'etat_an', 'id_a', 'id_mo', 'id_m', 'nature_tarif', 'visites', 'jaime','file_path'
+            'tarif_an', 'detail_an', 'etat_an', 'id_a', 'id_mo', 'id_m', 'nature_tarif', 'visites', 'jaime','file_path','file_path_video'
+            ,'file_name','file_name_video'
         ],
         // boost
         'boost' => [
@@ -289,7 +290,6 @@ class Models {
         } 
     }
     
-
     public function __destruct() {
         $this->conn->close();
     }

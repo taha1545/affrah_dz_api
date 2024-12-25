@@ -3,8 +3,11 @@
      require_once 'Services/Collection.php';
      require_once 'Services/Resource.php';
      require_once 'Services/Validator.php';
+     require_once 'Services/UploadVideo.php';
 
    class ImageController extends Controller {
+
+    // filter  
 
     public function index()
     {
@@ -50,6 +53,10 @@
     //validation
      $valid=new Validator ();
      $data=$valid->validateData($data,'images');
+     //validate image
+      $valid::ValideImage($data['image']);
+      //create image
+      $data['image']=UploadVideo::CreateImage($data['image']);
     //resource
      $data=Resource::GetImages($data);
     //create  
@@ -75,6 +82,10 @@
            //
            $valide= new Validator();
           $data=$valide->validateData($data,'updateimages');
+          //validate image
+              $valide::ValideImage($data['image']);
+          //create image 
+           $data['image']=UploadVideo::CreateImage($data['image']);
           // resource 
           $data=Resource::UpdateImages($data);
           // Update operation
@@ -112,10 +123,7 @@
         'message' => $e->getMessage()
     ];
    }
-}
-
-
-
+  }
 
 
    }  

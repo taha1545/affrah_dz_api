@@ -6,6 +6,8 @@
 
   class FavorisController extends Controller {
 
+    //filter  
+
     public function index()
     {
       try {
@@ -112,8 +114,5 @@
     ];
    }
 }
-
-
-
 
   }

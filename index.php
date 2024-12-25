@@ -1,5 +1,4 @@
 <?php
-
 // import controolers
     require_once 'Controller/ClientController.php';
     require_once 'Controller/MembreController.php';
@@ -11,7 +10,6 @@
     require_once 'Controller/BoostController.php';
     require_once 'Controller/ContactController.php';
     require_once 'Controller/ImageController.php';
-    
   // controller classes 10
   $ClientController=new ClientController();
   $membreController=new MembreController();
@@ -23,7 +21,7 @@
   $boostController= new BoostController();
   $contactController=new ContactController();
   $imagesController= new ImageController();
- 
+
 // header type json and methode and url  and data sent with request and varible in url for fillter
     header('Content-Type: application/json'); 
     $url = trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
@@ -33,15 +31,23 @@
    parse_str($_SERVER['QUERY_STRING'] ?? '', $query);
     //
     $data = [];
-    if ($method === 'POST' || $method === 'PUT' || $method === 'DELETE') {
-          $rawInput = file_get_contents('php://input');
-          $data = json_decode($rawInput, true) ?? [];
-    }
+    if ($method === 'POST'  ) {
+            $data = $_POST;
+            if (!empty($_FILES) ) {
+                foreach ($_FILES as $key => $file) {
+                    $data[$key] = $file;
+                }
+            }
+        } else {
+            $rawInput = file_get_contents('php://input');
+            $data = json_decode($rawInput, true) ?? [];
+        }
+    
    
 // routing  
         switch (true) {
 
-//client
+      //client
         case ($url === 'client' && $method === 'GET'):
          $result=$ClientController->index(); 
         break;
@@ -73,7 +79,7 @@
           
 
 
-//membre
+       //membre
 
        case ($url === 'membre' && $method === 'GET'):
         $result=$membreController->index(); 
@@ -104,7 +110,7 @@
             $result=$membreController->ShowImage($id);
           break;     
      
-// moderateur
+     // moderateur
 
     case ($url === 'moderateur' && $method === 'GET'):
         $result=$moderateurController->index(); 
@@ -135,7 +141,7 @@
             $result=$moderateurController->ShowImage($id);
           break;     
     
-//resarvation
+     //resarvation
 
     case ($url === 'resarvation' && $method === 'GET'):
         $result=$resarvationController->index(); 
@@ -188,7 +194,7 @@
             break;
 
 
-//admin 
+      //admin 
 
       case ($url === 'admin' && $method === 'GET'):
         $result=$adminController->index(); 
@@ -218,7 +224,7 @@
             $result=$adminController->ShowImage($id);
           break;     
 
-// favoris
+        // favoris
     
     case ($url === 'favoris' && $method === 'GET'):
         $result=$favorisController->index(); 
@@ -246,7 +252,7 @@
       
      
 
-//boost
+      //boost
 
     case ($url === 'boost' && $method === 'GET'):
         $result=$boostController->index(); 
@@ -278,7 +284,7 @@
           break;
 
 
-//contact
+        //contact
      
     case ($url === 'contact' && $method === 'GET'):
         $result=$contactController->index(); 
@@ -305,7 +311,7 @@
            break;
 
 
-//images   
+      //images   
 
     case ($url === 'images' && $method === 'GET'):
         $result=$imagesController->index(); 
@@ -331,12 +337,24 @@
            $result=$imagesController->delete($id);
            break;
 
-     
-        
+         //test   
 
-    default:
+        case($url =='test'):
+          $result=[
+            'url'=>$url,
+           'methode'=>$method,
+           'data'=>$data,
+             ];
+        break;
+        
+       // error
+
+      default:
         http_response_code(404);
-        $result =['error'=>'page not found '];
+        $result =[
+           'status' => 'error',
+           'message' =>"page not found",
+       ];
         break;
 }
 

@@ -7,6 +7,8 @@ require_once 'Services/Validator.php';
 
 class AdminController extends Controller {
 
+  //login + auth 
+
   public function index()
   {
     try {
@@ -50,6 +52,8 @@ class AdminController extends Controller {
   //validation
    $valid=new Validator ();
    $data=$valid->validateData($data,'admin');
+    //image validation
+    $valid->ValideImage($data['image']);
   //resource
    $data=Resource::GetAdmin($data);
   //create  

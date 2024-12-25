@@ -6,6 +6,8 @@
 
   class ClientController extends Controller {    
 
+    // login + auth 
+
     public function index()
   {
     try {
@@ -42,12 +44,14 @@
      }  
     }
 
-       // image upload 
+      
       public function create($data){
           try{
         //validation
          $valid=new Validator ();
          $data=$valid->validateData($data,'client');
+         //image validation
+          $valid->ValideImage($data['image']);
         //resource
          $data=Resource::GetClient($data);
         //create  

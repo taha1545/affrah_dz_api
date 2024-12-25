@@ -1,7 +1,7 @@
 <?php
 //
 class Validator {
-    //
+  
     protected $validationRules = [
         'client' => [
             'name' => ['required', 'string', 'min:4', 'max:100'],
@@ -14,6 +14,7 @@ class Validator {
             'banned' => ['required', 'string', 'in:non,oui'],
             'idAdmin' => ['required', 'integer', 'exists:admin,id_a'],
             'idModerateur' => ['required', 'integer', 'exists:moderateur,id_mo'],
+            'image'=>['required'],
         ],
     
         'admin' => [
@@ -21,10 +22,11 @@ class Validator {
             'email' => ['required', 'email', 'unique:admin,email_a'],
             'phone' => ['required', 'string', 'min:6', 'max:30', 'unique:admin,tel_a'],
             'password' => ['required', 'string', 'min:8'],
+            'image'=>['required'],
         ],
     
         'annonce' => [
-            'name' => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255','unique:annonce,nom_an'],
             'category' => ['required', 'string', 'max:255'],
             'eventType' => ['required', 'string', 'max:255'],
             'city' => ['required', 'string', 'max:255'],
@@ -41,6 +43,8 @@ class Validator {
             'pricingNature' => ['nullable', 'string', 'max:255'],
             'visits' => ['nullable', 'integer'],
             'likes' => ['nullable', 'integer'],
+            'video1'=>['required'],
+            'video2'=>['nullable']
         ],
     
         'boost' => [
@@ -51,6 +55,7 @@ class Validator {
             'idAnnonce' => ['required', 'integer', 'exists:annonce,id_an'],
             'creationDate' => ['required', 'date'],
             'idModerateur' => ['required', 'integer', 'exists:moderateur,id_mo'],
+            'image'=>['required'],
         ],
     
         'contact' => [
@@ -78,6 +83,7 @@ class Validator {
         'phone' => ['required', 'string', 'min:6', 'max:15','unique:moderateur,tel_mo'],
          'password' => ['required', 'string', 'min:8'],
         'idAdmin' => ['required', 'integer', 'exists:admin,id_a'],
+        'image'=>['required'],
          ],
     
        'reservation' => [
@@ -106,6 +112,7 @@ class Validator {
             'idAdmin' => ['required', 'integer', 'exists:admin,id_a'],
             'banned' => ['required', 'string', 'in:non,oui'], 
             'idModerateur' => ['required', 'integer', 'exists:moderateur,id_mo'], 
+            'image'=>['required'],
         ],
 
         'updateclient' => [
@@ -162,7 +169,7 @@ class Validator {
             'idModerateur' => ['integer', 'exists:moderateur,id_mo'],
         ],
         'updateannonce' => [
-            'name' => ['string', 'max:255'],
+            'name' => ['string', 'max:255','unique:annonce,nom_an'],
             'category' => ['string', 'max:255'],
             'eventType' => ['string', 'max:255'],
             'city' => [ 'string', 'max:255'],
@@ -207,26 +214,17 @@ class Validator {
             'idAnnonce' => [ 'integer', 'exists:annonce,id_an'],
               ],
            'images'=>[
-              'name'=>['required','string','max:255'],
-              'size'=>['required','integer'],
-              'type'=>['required','string','max:255'],
-              'path'=>['required','string','max:255'],
-              'date'=>['required','date'],
+               'image'=>['required'],
               'idAnnonce' => ['required','integer', 'exists:annonce,id_an'],
            ],   
            'updateimages'=>[
-            'name'=>['string','max:255'],
-            'size'=>['integer'],
-            'type'=>['string','max:255'],
-            'path'=>['string','max:255'],
-            'date'=>['date'],
+             'image'=>['required'],
             'idAnnonce' => ['integer', 'exists:annonce,id_an'],
            ]
     ];
-    
-    //
+
     protected $data = [];
-     //
+    
     public function validateData($data, $table) {
         //
         if (!isset($this->validationRules[$table])) {
@@ -352,7 +350,7 @@ class Validator {
     }
 
     public static function ValideImage($image) {
-        if (isset($image)) {
+        if (isset($image) && isset($image['error'])  && isset( $image['tmp_name'])  && isset($image['size']) ) {
             if ($image['error'] === UPLOAD_ERR_OK) {
                 $fileTmpPath = $image['tmp_name'];
                 $fileSize = $image['size'];
@@ -361,7 +359,7 @@ class Validator {
     
                 if (in_array($fileType, $allowedMimeTypes)) {
                     if ($fileSize <= 3 * 1024 * 1024) {
-                       return $fileTmpPath;
+                       $status=true;
                     } else {
                         throw new Exception('The image exceeds the maximum allowed size of 3MB.');
                     }
@@ -371,7 +369,36 @@ class Validator {
             } else {
                 throw new Exception('File upload error: ' . $image['error']);
             }
+        }else{
+            throw new Exception('no image found');
         }
     }
+
+    public static function ValideVideo($video)
+    {
+        if (isset($video) && isset($video['error']) && isset($video['tmp_name']) && isset($video['size'])) {
+            if ($video['error'] === UPLOAD_ERR_OK) {
+                $fileTmpPath = $video['tmp_name'];
+                $fileSize = $video['size'];
+                $fileType = mime_content_type($fileTmpPath);
+                $allowedMimeTypes = ['video/mp4', 'video/x-matroska', 'video/avi', 'video/mpeg','image/jpeg', 'image/png'];
+    
+                if (in_array($fileType, $allowedMimeTypes)) {
+                    if ($fileSize <= 8 * 1024 * 1024) { 
+                        return true; 
+                    } else {
+                        throw new Exception('The video exceeds the maximum allowed size of 8MB ');
+                    }
+                } else {
+                    throw new Exception('Invalid video type. Only MP4, MKV, AVI, and MPEG formats are allowed.');
+                }
+            } else {
+                throw new Exception('File upload error: ' . $video['error']);
+            }
+        } else {
+            throw new Exception('No video file found.');
+        }
+    }
+    
     
 }

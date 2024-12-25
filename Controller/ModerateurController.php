@@ -7,7 +7,7 @@
 
     class ModerateurController  extends Controller {
 
-
+        //login + auth
 
       public function index()
       {
@@ -52,6 +52,8 @@
       //validation
        $valid=new Validator ();
        $data=$valid->validateData($data,'moderateur');
+        //image validation
+        $valid->ValideImage($data['image']);
       //resource
        $data=Resource::GetModerateur($data);
       //create  

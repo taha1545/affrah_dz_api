@@ -6,6 +6,8 @@
 
    class BoostController extends Controller {
 
+    //  filter   
+
     public function index()
     {
       try {
@@ -49,6 +51,8 @@
     //validation
      $valid=new Validator ();
      $data=$valid->validateData($data,'boost');
+      //image validation
+      $valid->ValideImage($data['image']);
     //resource
      $data=Resource::GetBoost($data);
     //create  
