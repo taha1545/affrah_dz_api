@@ -27,8 +27,8 @@ RUN echo "upload_max_filesize = 50M" >> /usr/local/etc/php/conf.d/uploads.ini &&
 # Enable Apache mod_rewrite and configure overrides
 RUN a2enmod rewrite && \
     echo '<Directory /var/www/html>\n\
-        AllowOverride All\n\
-        Require all granted\n\
+    AllowOverride All\n\
+    Require all granted\n\
     </Directory>' > /etc/apache2/conf-available/override.conf && \
     a2enconf override
 

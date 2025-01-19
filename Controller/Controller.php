@@ -1,53 +1,48 @@
-<?php 
-  
-  require_once 'Services/Models.php';
- 
-class Controller {
+<?php
 
-   protected $client; 
-   
-   protected $membre; 
+require_once 'Services/Models.php';
 
-   protected $annonce;  
+class Controller
+{
 
-   protected $moderateur;  
+   protected $client;
 
-   protected $resarvation;  
+   protected $membre;
 
-   protected $admin;   
+   protected $annonce;
 
-   protected $favoris;  
 
-   protected $boost; 
+   protected $resarvation;
 
-   protected $contact; 
 
-   protected $images;  
-   
+   protected $favoris;
 
-   public function __construct(){
+   protected $boost;
 
-      $this->client= new Models('client');
+   protected $contact;
 
-      $this->membre=new Models('membre');
-        
-      $this->moderateur=new Models('moderateur') ;
+   protected $images;
 
-      $this->resarvation= new Models('reservation');
 
-      $this->annonce= new Models('annonce');
+   public function __construct()
+   {
 
-      $this->admin= new Models('admin');
+      $this->client = new Models('client');
 
-      $this->favoris= new Models('favoris');
+      $this->membre = new Models('membre');
+
+
+      $this->resarvation = new Models('reservation');
+
+      $this->annonce = new Models('annonce');
+
+
+      $this->favoris = new Models('favoris');
 
       $this->boost = new Models('boost');
 
       $this->contact = new Models('contact');
 
-      $this ->images = new Models('images');
+      $this->images = new Models('images');
    }
-      
-
 }
-

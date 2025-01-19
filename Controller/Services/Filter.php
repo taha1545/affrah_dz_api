@@ -1,37 +1,48 @@
 <?php
 
-class Filter {
-
+class Filter
+{
     protected static $operation = [
         'eq'  => '=',
         'bt'  => '>',
         'ls'  => '<',
         'btq' => '>=',
         'lsq' => '<=',
+        'like'=>'LIKE'
     ];
 
-    public static function Filterquery($query) {
+    public static function Filterquery($query, $table = null)
+    {
         $rules = [];
 
-        foreach ($query as $key => $value) {
+        if ($table == "annonce") {
+            // Only include specific mappings
+            $query = [
+                'nom_an'   => $query['name'] ?? null,
+                'tarif_an' => $query['price'] ?? null,
+                'type_b'   => $query['type'] ?? null,
+                'categorie_an'=>$query['category'] ?? null,
+                'ville_an'=>$query['city'] ?? null,
+            ];
 
-    
+            // Remove null values
+            $query = array_filter($query, function ($value) {
+                return $value !== null;
+            });
+        }
+
+        foreach ($query as $key => $value) {
             if (is_array($value)) {
                 foreach ($value as $subKey => $subValue) {
                     if (isset(self::$operation[$subKey])) {
                         $operator = self::$operation[$subKey];
-                        $rules[] = [$key, $operator, $subValue];
+                        $rules[] = [$key, $operator, trim($subValue, '"')]; // Remove extra quotes
                     } else {
-                        $rules[] = [$key, '=', $subValue];
+                        $rules[] = [$key, '=', trim($subValue, '"')];
                     }
                 }
             } else {
-                if (isset(self::$operation[$key])) {
-                    $operator = self::$operation[$key];
-                    $rules[] = [$key, $operator, $value];
-                } else {
-                    $rules[] = [$key, '=', $value];
-                }
+                $rules[] = [$key, '=', trim($value, '"')];
             }
         }
 

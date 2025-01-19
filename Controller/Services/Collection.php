@@ -1,18 +1,22 @@
 <?php
-  
-  require_once 'Resource.php';
-  
-class Collection {
+
+require_once 'Resource.php';
+
+class Collection
+{
 
     // CLIENTS
-    public static function returnClients($data) {
+    public static function returnClients($data)
+    {
         $clients = [];
         foreach ($data as $clientData) {
             $clients[] = Resource::ReturnClient($clientData);
         }
         return $clients;
     }
-    public static function returnImages($data) {
+
+    public static function returnImages($data)
+    {
         $images = [];
         foreach ($data as $image) {
             $images[] = Resource::ReturnImages($image);
@@ -20,26 +24,31 @@ class Collection {
         return $images;
     }
 
-    // ADMINS
-    public static function returnAdmins($data) {
-        $admins = [];
-        foreach ($data as $adminData) {
-            $admins[] = Resource::ReturnAdmin($adminData);
-        }
-        return $admins;
-    }
+
 
     // ANNOUNCES
-    public static function returnAnnounces($data) {
+    public static function returnAnnounces($data)
+    {
         $announces = [];
         foreach ($data as $announceData) {
-            $announces[] = Resource::ReturnAnnonce($announceData);
+            $announces[]=[
+                'id' =>(int) $announceData['id_an'],
+                'name' => $announceData['nom_an'],
+                'category' => $announceData['categorie_an'],
+                'eventType' => $announceData['type_fete'],
+                'city' => $announceData['ville_an'],
+                'address'=>$announceData['adresse_an'],
+                'price'=>(float) $announceData['tarif_an'],
+                'image_full_path' => $announceData['file_path'].$announceData['file_name'],
+                'type'=>$announceData['type_b']
+            ];
         }
         return $announces;
     }
 
     // BOOSTS
-    public static function returnBoosts($data) {
+    public static function returnBoosts($data)
+    {
         $boosts = [];
         foreach ($data as $boostData) {
             $boosts[] = Resource::ReturnBoost($boostData);
@@ -48,7 +57,8 @@ class Collection {
     }
 
     // CONTACTS
-    public static function returnContacts($data) {
+    public static function returnContacts($data)
+    {
         $contacts = [];
         foreach ($data as $contactData) {
             $contacts[] = Resource::ReturnContact($contactData);
@@ -57,7 +67,8 @@ class Collection {
     }
 
     // FAVORITES
-    public static function returnFavorites($data) {
+    public static function returnFavorites($data)
+    {
         $favorites = [];
         foreach ($data as $favoriteData) {
             $favorites[] = Resource::ReturnFavorite($favoriteData);
@@ -65,17 +76,11 @@ class Collection {
         return $favorites;
     }
 
-    // MODERATORS
-    public static function returnModerators($data) {
-        $moderators = [];
-        foreach ($data as $moderatorData) {
-            $moderators[] = Resource::ReturnModerateur($moderatorData);
-        }
-        return $moderators;
-    }
+
 
     // RESERVATIONS
-    public static function returnReservations($data) {
+    public static function returnReservations($data)
+    {
         $reservations = [];
         foreach ($data as $reservationData) {
             $reservations[] = Resource::ReturnReservation($reservationData);
@@ -84,7 +89,8 @@ class Collection {
     }
 
     // MEMBERS
-    public static function returnMembers($data) {
+    public static function returnMembers($data)
+    {
         $members = [];
         foreach ($data as $memberData) {
             $members[] = Resource::ReturnMembre($memberData);

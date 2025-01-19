@@ -1,29 +1,33 @@
 <?php
 
- use Firebase\JWT\JWT;
- use Firebase\JWT\Key; 
+use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
 
-class Auth {
+class Auth
+{
     private $secret;
 
-    public function __construct($secret) {
+    public function __construct($secret = "3zV!8$2jF^aP1@0X#N6LkQw*rD3&m2Ttaha2005")
+    {
         $this->secret = $secret;
     }
 
     // Generate JWT Token
-    public function generateToken($userId, $role) {
+    public function generateToken($userId, $role)
+    {
         $payload = [
-            'sub' => $userId,           
-            'role' => $role,            
-            'iat' => time(),           
-            'exp' => time() + (3600*12)     
+            'sub' => $userId,
+            'role' => $role,
+            'iat' => time(),
+            'exp' => time() + (3600 * 240)
         ];
 
         return JWT::encode($payload, $this->secret, 'HS256');
     }
 
     // Validate JWT Token
-    public function validateToken($token) {
+    public function validateToken($token)
+    {
         try {
             $decoded = JWT::decode($token, new Key($this->secret, 'HS256'));
             return (array) $decoded;
@@ -33,11 +37,12 @@ class Auth {
     }
 
     // Middleware to Validate Auth Token
-    public function authMiddleware() {
+    public function authMiddleware()
+    {
         $headers = getallheaders();
         if (!isset($headers['Authorization'])) {
             http_response_code(401);
-           throw new Exception('forbbiden');
+            throw new Exception('forbbiden');
         }
         //
         $token = str_replace('Bearer ', '', $headers['Authorization']);
@@ -50,27 +55,27 @@ class Auth {
     }
 
     // Check Role
-    public function checkRole($requiredRole) {
+    public function checkRole($requiredRole = [])
+    {
         $decoded = $this->authMiddleware();
         $userRole = $decoded['role'];
         //
-        if ($userRole !== $requiredRole) {
-            http_response_code(403);
-            die(json_encode([
-                'status' => 'error',
-                'message' => 'Forbidden: Insufficient permissions'
-            ]));
+        if (!in_array($userRole, $requiredRole)) {
+            throw new Exception("This role is not allowed for this user");
         }
     }
 
     // Get User ID from Token
-    public function getUserIdFromToken() {
+    public function getUserIdFromToken()
+    {
         $decoded = $this->authMiddleware();
         return $decoded['sub'];
     }
     // Get Role from Token
-    public function getRoleFromToken() {
+    public function getRoleFromToken()
+    {
         $decoded = $this->authMiddleware();
         return $decoded['role'];
     }
+    
 }
