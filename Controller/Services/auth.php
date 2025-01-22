@@ -42,7 +42,7 @@ class Auth
         $headers = getallheaders();
         if (!isset($headers['Authorization'])) {
             http_response_code(401);
-            throw new Exception('forbbiden');
+            throw new Exception('u need to login first');
         }
         //
         $token = str_replace('Bearer ', '', $headers['Authorization']);
@@ -50,7 +50,7 @@ class Auth
             return $this->validateToken($token);
         } catch (Exception $e) {
             http_response_code(401);
-            throw new Exception('forbbiden');
+            throw new Exception('token is not valid');
         }
     }
 
@@ -59,10 +59,10 @@ class Auth
     {
         $decoded = $this->authMiddleware();
         $userRole = $decoded['role'];
-        //
         if (!in_array($userRole, $requiredRole)) {
             throw new Exception("This role is not allowed for this user");
         }
+        return $decoded;
     }
 
     // Get User ID from Token
@@ -77,5 +77,4 @@ class Auth
         $decoded = $this->authMiddleware();
         return $decoded['role'];
     }
-    
 }

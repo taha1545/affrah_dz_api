@@ -8,10 +8,17 @@ require_once 'Services/Filter.php';
 class AnnonceController  extends Controller
 {
 
-  // filter
-  // image problem
   // rating problem
   // search
+  // visite + likes 
+  // paginate + cache
+  //performance
+  // more validation
+  //update prblm 
+  //get id by token
+  // commit transaction
+  //check id 
+  //performance
 
   public function index($query = null)
   {
@@ -81,33 +88,48 @@ class AnnonceController  extends Controller
   public function create($data)
   {
     try {
-      //validation of data
+       //authentication role 
+       $auth = new Auth();
+       $auth->checkRole(['membre']);
+      //validation of data and files
       $valid = new Validator();
       $data = $valid->validateData($data, 'annonce');
-      //validation of videos
-      $valid::ValideVideo(video: $data['image']);
+      $valid::ValideImage($data['image']);
+      foreach ($data['images'] as $file) {
+        $valid::ValideImage($file);
+      }
       if (isset($data['video'])) {
         $valid::ValideVideo(video: $data['video']);
       }
-      //create vedio
-      $data['image'] = UploadVideo::CreateVideo($data['image']);
+
+      //create image and video
+      $data['image'] = UploadVideo::CreateImage($data['image']);
       if (isset($data['video'])) {
         $data['video'] = UploadVideo::CreateVideo($data['video']);
       }
+
       //resource
+      $oldimages = $data['images'];
       $data = Resource::GetAnnonce($data);
-      //create  
-      $this->annonce->create($data);
+      //create annonce
+      $id_an = $this->annonce->create($data);
+      //create images
+      foreach ($oldimages as $file) {
+        $images[] = Resource::GetAlotImages(UploadVideo::CreateImage($file), $id_an);
+      }
+      $this->images->bulkcreate($images);
       //return true 
       return [
         'status' => 'success',
         'message' => 'data created success',
       ];
+
+      //
     } catch (Exception $e) {
-      // error message
+      http_response_code(404);
       return [
         'status' => 'error',
-        'message' => json_decode($e->getMessage()),
+        'message' => json_decode($e->getMessage()) ?? json_decode("there is error while trynig to create annonce")
       ];
     }
   }
@@ -116,6 +138,9 @@ class AnnonceController  extends Controller
   public function update($id, $data)
   {
     try {
+       //authentication role 
+       $auth = new Auth();
+       $user=$auth->checkRole(['membre']);
       //
       $valide = new Validator();
       $data = $valide->validateData($data, 'updateannonce');
@@ -143,6 +168,10 @@ class AnnonceController  extends Controller
   public function delete($id)
   {
     try {
+        //authentication role 
+        $auth = new Auth();
+        $user=$auth->checkRole(['membre']);
+        //
       $this->annonce->delete($id, 'id_an');
       // Return success response
       return [
@@ -222,6 +251,4 @@ class AnnonceController  extends Controller
       ];
     }
   }
-  
-
 }

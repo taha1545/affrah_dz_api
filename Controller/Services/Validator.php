@@ -19,14 +19,15 @@ class Validator
             'city' => ['required', 'string', 'max:255'],
             'address' => ['required', 'string', 'max:255'],
             'creationDate' => ['date'],
-            'phone' => [ 'string', 'max:30'],
+            'phone' => ['string', 'max:30'],
             'mobile' => ['required', 'string', 'max:30'],
             'price' => ['nullable', 'numeric'],
             'details' => ['nullable', 'string', 'max:255'],
             'idMember' => ['required', 'integer', 'exists:membre,id_m'],
             'pricingNature' => ['nullable', 'string', 'max:255'],
             'image' => ['required'],
-            'video' => ['nullable']
+            'video' => ['nullable'],
+            'images' => ['required'],
         ],
 
         'boost' => [
@@ -36,7 +37,7 @@ class Validator
             'idMember' => ['required', 'integer', 'exists:membre,id_m'],
             'idAnnonce' => ['required', 'integer', 'exists:annonce,id_an'],
             'creationDate' => ['date'],
-            'idModerateur' => [ 'integer', 'exists:moderateur,id_mo'],
+            'idModerateur' => ['integer', 'exists:moderateur,id_mo'],
             'image' => ['required'],
         ],
 
@@ -66,7 +67,7 @@ class Validator
             'phone' => ['required', 'string', 'max:30'],
             'type' => ['required', 'string', 'max:255'],
             'date' => ['required', 'date'],
-            'etat' => [ 'string', 'in:attente,active,inactive'],
+            'etat' => ['string', 'in:attente,active,inactive'],
             'idClient' => ['required', 'integer', 'exists:client,id_c'],
             'idMember' => ['required', 'integer', 'exists:membre,id_m'],
             'idAnnonce' => ['required', 'integer', 'exists:annonce,id_an'],
@@ -309,7 +310,7 @@ class Validator
                 $fileTmpPath = $image['tmp_name'];
                 $fileSize = $image['size'];
                 $fileType = mime_content_type($fileTmpPath);
-                $allowedMimeTypes = ['image/jpeg', 'image/png'];
+                $allowedMimeTypes = ['image/jpeg', 'image/png', 'image/jpg'];
 
                 if (in_array($fileType, $allowedMimeTypes)) {
                     if ($fileSize <= 5 * 1024 * 1024) {
@@ -353,6 +354,4 @@ class Validator
             throw new Exception('No video file found.');
         }
     }
-
-    
 }

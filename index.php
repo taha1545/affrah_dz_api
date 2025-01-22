@@ -10,7 +10,6 @@ require_once 'Controller/FavorisController.php';
 require_once 'Controller/BoostController.php';
 require_once 'Controller/ContactController.php';
 require_once 'Controller/ImageController.php';
-require_once 'Controller/Services/auth.php';
 // controller classes 
 $ClientController = new ClientController();
 $membreController = new MembreController();
@@ -33,16 +32,32 @@ parse_str($_SERVER['QUERY_STRING'] ?? '', $query);
 $data = [];
 if ($method === 'POST') {
   $data = $_POST;
+  //
   if (!empty($_FILES)) {
     foreach ($_FILES as $key => $file) {
-      $data[$key] = $file;
+      if ($key === 'images' && is_array($file['name'])) {
+        // Handle multiple files under 'images'
+        $filesArray = [];
+        foreach ($file['name'] as $index => $fileName) {
+          $filesArray[] = [
+            'name' => $fileName,
+            'type' => $file['type'][$index],
+            'tmp_name' => $file['tmp_name'][$index],
+            'error' => $file['error'][$index],
+            'size' => $file['size'][$index],
+          ];
+        }
+        $data[$key] = $filesArray;
+      } else {
+        // Handle single file
+        $data[$key] = $file;
+      }
     }
   }
 } else {
   $rawInput = file_get_contents('php://input');
   $data = json_decode($rawInput, true) ?? [];
 }
-
 // routing  
 switch (true) {
 
@@ -164,17 +179,17 @@ switch (true) {
     $result = $annonceController->index($query);
     break;
 
-    case ($url === 'annonce/categorie' && $method === 'GET'):
-      $result = $annonceController->showcategorie();
-      break;
+  case ($url === 'annonce/categorie' && $method === 'GET'):
+    $result = $annonceController->showcategorie();
+    break;
 
-      case ($url === 'annonce/vip' && $method === 'GET'):
-        $result = $annonceController->showvip();
-        break;
+  case ($url === 'annonce/vip' && $method === 'GET'):
+    $result = $annonceController->showvip();
+    break;
 
-        case ($url === 'annonce/gold' && $method === 'GET'):
-          $result = $annonceController->showgold();
-          break;  
+  case ($url === 'annonce/gold' && $method === 'GET'):
+    $result = $annonceController->showgold();
+    break;
 
 
   case (preg_match('/^annonce\/(\d+)$/', $url, $matches) && $method === 'GET'):
@@ -197,7 +212,7 @@ switch (true) {
     $result = $annonceController->delete($id);
     break;
 
-   
+
 
 
 
@@ -314,6 +329,11 @@ switch (true) {
     $result = $imagesController->delete($id);
     break;
 
+  case ($url == 'test'):
+    $result = [
+      'data' => $data
+    ];
+    break;
 
 
   default:

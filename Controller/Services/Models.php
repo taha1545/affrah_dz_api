@@ -616,6 +616,48 @@ class Models
         }
     }
 
+    public function bulkcreate(array $data)
+    {
+        // Ensure data is not empty
+        if (empty($data)) {
+            throw new InvalidArgumentException("Data array cannot be empty.");
+        }
+        // Extract columns from the first row
+        $columns = implode(", ", array_keys($data[0]));
+        // Create placeholders and values array
+        $placeholders = [];
+        $values = [];
+        $types = '';
+        foreach ($data as $row) {
+            // Create placeholders for each row
+            $placeholders[] = "(" . implode(", ", array_fill(0, count($row), "?")) . ")";
+
+            // Collect values and determine parameter types
+            foreach ($row as $value) {
+                $values[] = $value;
+                $types .= is_int($value) ? "i" : "s"; // 'i' for integer, 's' for string
+            }
+        }
+        // Prepare SQL statement
+        $placeholders = implode(", ", $placeholders);
+        $sql = "INSERT INTO {$this->tablename} ($columns) VALUES $placeholders";
+        // Prepare and execute the statement
+        $stmt = $this->conn->prepare($sql);
+        if (!$stmt) {
+            throw new Exception("SQL Preparation Error: " . $this->conn->error);
+        }
+        // Bind parameters dynamically
+        if (!$stmt->bind_param($types, ...$values)) {
+            throw new Exception("Parameter Binding Error: " . $stmt->error);
+        }
+        // Execute the statement
+        if (!$stmt->execute()) {
+            throw new Exception("Execution Error: " . $stmt->error);
+        }
+        //
+        $stmt->close();
+    }
+
 
 
     public function __destruct()

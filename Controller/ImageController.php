@@ -8,7 +8,7 @@ require_once 'Services/UploadVideo.php';
 class ImageController extends Controller
 {
 
-  // filter  
+  // create and delete focus and think  about it  
 
   public function index()
   {

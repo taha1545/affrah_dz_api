@@ -403,7 +403,22 @@ class Resource
     public static function ReturnImages($data)
     {
         return [
+            'id'=> $data['id_img'],
             'image_path' => $data['chemin_img'] . $data['nom_img'],
         ];
     }
+    
+    public static function  GetAlotImages($data,$id)
+    {
+        return [
+            'nom_img' => $data['name'],
+            'taille_img' => $data['size'],
+            'type_img' => $data['type'],
+            'chemin_img' => $data['path'],
+            'date_cr' => date('y-m-d  h:m:s'),
+            'id_an' => $id,
+        ];
+    }
+    
+
 }

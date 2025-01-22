@@ -176,6 +176,7 @@ class MembreController  extends Controller
           'token' => $auth->generateToken($user['id_m'], 'membre')
         ];
       } else {
+        http_response_code(404);
         return [
           'status' => 'error',
           'message' => 'password does not match'
@@ -183,6 +184,7 @@ class MembreController  extends Controller
       }
       //
     } catch (Exception) {
+      http_response_code(404);
       return [
         'status' => 'error',
         'message' => 'membre not found'

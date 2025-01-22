@@ -7,7 +7,7 @@ require_once 'Services/Validator.php';
 class BoostController extends Controller
 {
 
-  //  filter   
+  // more validation and logic  
 
   public function index()
   {
