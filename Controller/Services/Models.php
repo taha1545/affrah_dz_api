@@ -1,5 +1,4 @@
 <?php
-// all + find + create + update + delete + findimage +search + where + updatepassword + allvip + all boost + allcategorie + findall
 class Models
 {
     protected $tablename;
@@ -11,7 +10,9 @@ class Models
         'moderateur' => ['photo_mo'],
         'boost' => ['recu_b']
     ];
+    
     protected $conn;
+
     protected $Columns = [
         // CLIENT
         'client' => [
@@ -125,21 +126,10 @@ class Models
         ]
     ];
 
-    public function __construct($tablename)
+    public function __construct($tablename, $conn)
     {
-        // table and hidden column
         $this->tablename = $tablename;
-        $this->hidden_column = $this->hidden_columns[$tablename] ?? [];
-        // connection
-        try {
-            $this->conn = new mysqli("db", "root", "rootpassword", "affrah");
-            if ($this->conn->connect_error) {
-                throw new Exception("Connection failed: " . $this->conn->connect_error);
-            }
-        } catch (Exception $e) {
-            echo "Error: " . $e->getMessage();
-            die();
-        }
+        $this->conn = $conn;
     }
 
 
@@ -340,7 +330,7 @@ class Models
         }
     }
 
-    //not yet
+
     public function where($conditions = [], $options = [])
     {
         try {
@@ -518,7 +508,9 @@ class Models
     {
         // Select the columns
         try {
-            $sql = "SELECT DISTINCT categorie_an FROM annonce;";
+            $sql = "SELECT categorie_an, COUNT(categorie_an) AS count
+            FROM annonce
+            GROUP BY categorie_an;";
             $result = $this->conn->query($sql);
         } catch (Exception) {
             throw new Exception("error fetching");
@@ -658,10 +650,25 @@ class Models
         $stmt->close();
     }
 
-
-
-    public function __destruct()
+    public function allannoncefavoris($id, $key)
     {
-        $this->conn->close();
+        // Select the columns
+        try {
+            $sql = "SELECT a.*, b.type_b
+                  FROM annonce a
+                  JOIN favoris f ON a.id_an = f.id_an
+                  LEFT JOIN boost b ON a.id_an = b.id_an
+                   WHERE f.$key = $id;";
+
+            $result = $this->conn->query($sql);
+        } catch (Exception $e) {
+            throw new Exception("error fetching");
+        }
+        // Fetch and return the data
+        if ($result) {
+            $data = $result->fetch_all(MYSQLI_ASSOC);
+            return $data;
+        }
+        return [];
     }
 }

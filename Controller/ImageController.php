@@ -8,8 +8,6 @@ require_once 'Services/UploadVideo.php';
 class ImageController extends Controller
 {
 
-  // create and delete focus and think  about it  
-
   public function index()
   {
     try {
@@ -73,7 +71,7 @@ class ImageController extends Controller
       // error message
       return [
         'status' => 'error',
-        'message' => json_decode($e->getMessage()),
+        'message' => $e->getMessage(),
       ];
     }
   }
@@ -104,7 +102,7 @@ class ImageController extends Controller
       // Handle error
       return [
         'status' => 'error',
-        'message' => json_decode($e->getMessage())
+        'message' => $e->getMessage()
       ];
     }
   }
@@ -128,5 +126,4 @@ class ImageController extends Controller
       ];
     }
   }
-  
 }

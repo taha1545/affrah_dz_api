@@ -2,8 +2,7 @@
 
 class Resource
 {
-
-    // CLIENT
+    // CLIENT 
     public static function GetClient($data)
     {
         return [
@@ -26,7 +25,6 @@ class Resource
             'nom_c' => $data['name'] ?? null,
             'ville_c' => $data['wilaya'] ?? null,
             'age_c' => $data['age'] ?? null,
-            'email_c' => $data['email'] ?? null,
             'tel_c' => $data['phone'] ?? null,
             'mdp_c' => isset($data['password']) ? password_hash($data['password'], PASSWORD_BCRYPT) : null,
             'signale' => $data['banned'] ?? null,
@@ -95,15 +93,15 @@ class Resource
             'phone' => $data['tel_an'],
             'mobile' => $data['mobile_an'],
             'price' => (float) $data['tarif_an'],
-            'pricenature'=>$data['nature_tarif'] ?? null,
+            'pricenature' => $data['nature_tarif'] ?? null,
             'details' => $data['detail_an'],
             'visits' => (int)$data['visites'],
             'likes' => (int) $data['jaime'],
             'idmobmre' => (int) $data['id_m'],
             'image_full_path' => $data['file_path'] . $data['file_name'],
             'video_full_path' => $data['file_path_video'] . $data['file_name_video'] ?? null,
-            'boost'=>$data['boost'] ? Resource::ReturnBoost($data['boost']) :[],
-             'images' => $data['images'] ? Collection::ReturnImages($data['images']) : [],
+            'boost' => $data['boost'] ? Resource::ReturnBoost($data['boost']) : [],
+            'images' => $data['images'] ? Collection::ReturnImages($data['images']) : [],
         ];
     }
 
@@ -118,7 +116,7 @@ class Resource
             'id_an' => $data['idAnnonce'],
             'date_cr_b' =>  date("Y-m-d H:i:s", time()),
             'id_mo' => $data['idModerateur'] ?? 1,
-            'recu_b' => file_get_contents($data['image']['tmp_name']) 
+            'recu_b' => file_get_contents($data['image']['tmp_name'])
         ];
     }
 
@@ -128,12 +126,11 @@ class Resource
         return [
             'id' => (int)$data['id_b'],
             'duration' => $data['duree_b'],
-            'price' => $data['tarif_b'],
             'etat' => $data['etat_b'],
             'idMember' => (int) $data['id_m'],
             'idAnnonce' => (int)$data['id_an'],
             'creationDate' => $data['date_cr_b'],
-            'type'=>$data['type_b']
+            'type' => $data['type_b']
         ];
     }
 
@@ -145,11 +142,8 @@ class Resource
             'email' => $data['email'] ?? null,
             'msg' => $data['message'],
             'tel' => $data['phone'] ?? null,
-            'sujet' => $data['subject'] ?? null,
-            'genre' => $data['genre'] ?? null,
-            'id_m' => $data['idMember'] ?? null,
-            'id_c' => $data['idClient'] ?? null,
-            'id_mo' => $data['idModerateur'] ?? 1,
+            'sujet' => $data['subject'] ,
+            'genre' => $data['genre'] ,
         ];
     }
 
@@ -190,8 +184,6 @@ class Resource
         ];
     }
 
-
-
     // RESERVATION
     public static function GetReservation($data)
     {
@@ -204,7 +196,6 @@ class Resource
             'type_fete' => $data['type'],
             'etat_r' =>  "attente",
             'date_cr' =>  date("Y-m-d H:i:s", time()),
-            'id_c' => $data['idClient'],
             'id_m' => $data['idMember'],
             'id_an' => $data['idAnnonce']
         ];
@@ -262,7 +253,7 @@ class Resource
             'mobail' => $data['mobil_m'],
         ];
     }
-    // ANNONCE
+    // updates 
     public static function UpdateAnnonce($data)
     {
         $newdata = [
@@ -286,7 +277,7 @@ class Resource
         return array_filter($newdata, fn($value) => $value !== null);
     }
 
-    // BOOST
+    
     public static function UpdateBoost($data)
     {
         $newdata = [
@@ -302,7 +293,7 @@ class Resource
         return array_filter($newdata, fn($value) => $value !== null);
     }
 
-    // CONTACT
+   
     public static function UpdateContact($data)
     {
         $newdata = [
@@ -320,7 +311,6 @@ class Resource
         return array_filter($newdata, fn($value) => $value !== null);
     }
 
-    // FAVORITE
     public static function UpdateFavorite($data)
     {
         $newdata = [
@@ -331,7 +321,7 @@ class Resource
 
         return array_filter($newdata, fn($value) => $value !== null);
     }
-    // RESERVATION
+   
     public static function UpdateReservation($data)
     {
         $newdata = [
@@ -351,7 +341,7 @@ class Resource
         return array_filter($newdata, fn($value) => $value !== null);
     }
 
-    // MEMBRE
+
     public static function UpdateMembre($data)
     {
         $newdata = [
@@ -372,6 +362,8 @@ class Resource
         return array_filter($newdata, fn($value) => $value !== null);
     }
 
+
+    //image
     public static function  GetImages($data)
     {
         return [
@@ -403,12 +395,13 @@ class Resource
     public static function ReturnImages($data)
     {
         return [
-            'id'=> $data['id_img'],
+            'id' => $data['id_img'],
             'image_path' => $data['chemin_img'] . $data['nom_img'],
+            'idAnnonce'=>$data['id_an']
         ];
     }
-    
-    public static function  GetAlotImages($data,$id)
+
+    public static function  GetAlotImages($data, $id)
     {
         return [
             'nom_img' => $data['name'],
@@ -419,6 +412,4 @@ class Resource
             'id_an' => $id,
         ];
     }
-    
-
 }

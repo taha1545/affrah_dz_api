@@ -6,9 +6,6 @@ require_once 'Services/Validator.php';
 
 class ContactController extends Controller
 {
-
-  //filter 
-
   public function index()
   {
     try {
@@ -26,7 +23,6 @@ class ContactController extends Controller
       ];
     }
   }
-
 
   public function show($id)
   {
@@ -47,15 +43,22 @@ class ContactController extends Controller
     }
   }
 
-
   public function create($data)
   {
     try {
+      //authentication role 
+      $auth = new Auth();
+      $user = $auth->checkRole(['client', 'membre']);
       //validation
       $valid = new Validator();
       $data = $valid->validateData($data, 'contact');
       //resource
       $data = Resource::GetContact($data);
+      if ($user['role'] == 'membre') {
+        $data['id_m'] = $user['sub'];
+      } else {
+        $data['id_c'] = $user['sub'];
+      }
       //create  
       $this->contact->create($data);
       //return true 
@@ -67,7 +70,7 @@ class ContactController extends Controller
       // error message
       return [
         'status' => 'error',
-        'message' => json_decode($e->getMessage()),
+        'message' => json_decode($e->getMessage()) ?? $e->getMessage(),
       ];
     }
   }
@@ -98,7 +101,6 @@ class ContactController extends Controller
       ];
     }
   }
-
 
   public function delete($id)
   {

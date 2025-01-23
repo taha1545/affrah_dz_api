@@ -8,6 +8,8 @@ require_once 'Services/auth.php';
 class ClientController extends Controller
 {
 
+  //otp send email 
+
 
   public function index()
   {

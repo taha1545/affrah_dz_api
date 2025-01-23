@@ -5,7 +5,7 @@ use Firebase\JWT\Key;
 
 class Auth
 {
-    private $secret;
+    private $secret; 
 
     public function __construct($secret = "3zV!8$2jF^aP1@0X#N6LkQw*rD3&m2Ttaha2005")
     {

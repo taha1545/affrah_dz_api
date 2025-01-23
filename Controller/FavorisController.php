@@ -7,7 +7,6 @@ require_once 'Services/Validator.php';
 class FavorisController extends Controller
 {
 
-  //filter  
 
   public function index()
   {
@@ -118,4 +117,5 @@ class FavorisController extends Controller
       ];
     }
   }
+  
 }

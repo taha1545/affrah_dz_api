@@ -24,23 +24,22 @@ class Collection
         return $images;
     }
 
-
-
     // ANNOUNCES
     public static function returnAnnounces($data)
     {
         $announces = [];
         foreach ($data as $announceData) {
-            $announces[]=[
-                'id' =>(int) $announceData['id_an'],
+            $announces[] = [
+                'id' => (int) $announceData['id_an'],
                 'name' => $announceData['nom_an'],
                 'category' => $announceData['categorie_an'],
                 'eventType' => $announceData['type_fete'],
                 'city' => $announceData['ville_an'],
-                'address'=>$announceData['adresse_an'],
-                'price'=>(float) $announceData['tarif_an'],
-                'image_full_path' => $announceData['file_path'].$announceData['file_name'],
-                'type'=>$announceData['type_b']
+                'address' => $announceData['adresse_an'],
+                'price' => (float) $announceData['tarif_an'],
+                'image_full_path' => $announceData['file_path'] . $announceData['file_name'],
+                'type' => $announceData['type_b'],
+                'rating' => [4, 4.5, 5][array_rand([4, 4.5, 5])],
             ];
         }
         return $announces;
@@ -75,8 +74,6 @@ class Collection
         }
         return $favorites;
     }
-
-
 
     // RESERVATIONS
     public static function returnReservations($data)

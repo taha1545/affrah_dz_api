@@ -7,7 +7,7 @@ require_once 'Services/Validator.php';
 class MembreController  extends Controller
 {
 
-  // show + all + create + update + login + delete + forgetpassword => membre 
+  // otp send email
 
   public function index(){
     try {
@@ -172,7 +172,7 @@ class MembreController  extends Controller
         //
         $auth = new Auth();
         return [
-          'status' => 'succses',
+          'status' => 'success',
           'token' => $auth->generateToken($user['id_m'], 'membre')
         ];
       } else {

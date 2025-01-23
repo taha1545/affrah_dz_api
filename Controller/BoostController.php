@@ -69,7 +69,7 @@ class BoostController extends Controller
       // error message
       return [
         'status' => 'error',
-        'message' => json_decode($e->getMessage()),
+        'message' => $e->getMessage(),
       ];
     }
   }
@@ -96,7 +96,7 @@ class BoostController extends Controller
       // Handle error
       return [
         'status' => 'error',
-        'message' => json_decode($e->getMessage())
+        'message' => $e->getMessage()
       ];
     }
   }
@@ -122,7 +122,6 @@ class BoostController extends Controller
   }
 
 
-
   public function ShowImage($id)
   {
     $image = $this->boost->findImage($id, 'id_b');
@@ -136,4 +135,5 @@ class BoostController extends Controller
       http_response_code(404);
     }
   }
+  
 }

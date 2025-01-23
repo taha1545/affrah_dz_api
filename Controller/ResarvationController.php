@@ -7,16 +7,19 @@ require_once 'Services/Validator.php';
 class ResarvationController extends Controller
 {
 
-  // filter 
-  // get id by token
-  // auth 
   //update prblm
-  // more validation
+  // more validation 
+  // more auth 
 
-  public function index()
+  public function index($query = null)
   {
     try {
-      $data = $this->resarvation->all();
+      if ($query == null) {
+        $data = $this->resarvation->all();
+      } else {
+        $condition = Filter::Filterquery($query, 'resarvation');
+        $data = $this->resarvation->where($condition);
+      }
       return [
         'status' => 'success',
         'message' => 'data retrieved successfully',
@@ -24,6 +27,7 @@ class ResarvationController extends Controller
       ];
     } catch (Exception $e) {
       //
+      http_response_code(404);
       return [
         'status' => 'error',
         'message' => 'An error occurred while fetching data',
@@ -57,12 +61,13 @@ class ResarvationController extends Controller
     try {
       //authentication role 
       $auth = new Auth();
-      $auth->checkRole(['membre', 'client']);
+      $user = $auth->checkRole(['client']);
       //validation
       $valid = new Validator();
       $data = $valid->validateData($data, 'reservation');
       //resource
       $data = Resource::GetReservation($data);
+      $data['id_c'] = $user['sub'];
       //create  
       $this->resarvation->create($data);
       //return true 
@@ -71,10 +76,11 @@ class ResarvationController extends Controller
         'message' => 'data created success',
       ];
     } catch (Exception $e) {
-      // error message
+      http_response_code(404);
+      $errorms = json_decode($e->getMessage()) ?? $e->getMessage();
       return [
         'status' => 'error',
-        'message' => json_decode($e->getMessage()),
+        'message' => $errorms
       ];
     }
   }
@@ -83,6 +89,9 @@ class ResarvationController extends Controller
   public function update($id, $data)
   {
     try {
+      //authentication role 
+      $auth = new Auth();
+      $user = $auth->checkRole(['client', 'membre']);
       //
       $valide = new Validator();
       $data = $valide->validateData($data, 'updatereservation');
@@ -98,10 +107,11 @@ class ResarvationController extends Controller
         'message' => 'Data updated successfully'
       ];
     } catch (Exception $e) {
-      // Handle error
+      http_response_code(404);
+      $errorms = json_decode($e->getMessage()) ?? $e->getMessage();
       return [
         'status' => 'error',
-        'message' => json_decode($e->getMessage())
+        'message' => $errorms
       ];
     }
   }
@@ -110,6 +120,10 @@ class ResarvationController extends Controller
   public function delete($id)
   {
     try {
+      //authentication role 
+      $auth = new Auth();
+      $user = $auth->checkRole(['client', 'membre']);
+      //
       $this->resarvation->delete($id, 'id_r');
       // Return success response
       return [
@@ -122,6 +136,34 @@ class ResarvationController extends Controller
       return [
         'status' => 'error',
         'message' => $e->getMessage()
+      ];
+    }
+  }
+
+
+  public function myresarvation()
+  {
+    try {
+      //authentication role 
+      $auth = new Auth();
+      $user = $auth->checkRole(['client', 'membre']);
+      // find resarvation
+      if ($user['role'] == 'client') {
+        $data = $this->resarvation->findall($user['sub'], 'id_c');
+      } else {
+        $data = $this->resarvation->findall($user['sub'], 'id_m');
+      }
+      //
+      return [
+        'status' => 'success',
+        'message' => 'data retrieved successfully',
+        'data' => Collection::returnReservations($data)
+      ];
+    } catch (Exception $e) {
+      http_response_code(404);
+      return [
+        'status' => 'error',
+        'message' => "no resarvation found"
       ];
     }
   }

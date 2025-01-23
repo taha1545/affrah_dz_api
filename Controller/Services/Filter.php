@@ -8,7 +8,7 @@ class Filter
         'ls'  => '<',
         'btq' => '>=',
         'lsq' => '<=',
-        'like'=>'LIKE'
+        'like' => 'LIKE'
     ];
 
     public static function Filterquery($query, $table = null)
@@ -21,10 +21,25 @@ class Filter
                 'nom_an'   => $query['name'] ?? null,
                 'tarif_an' => $query['price'] ?? null,
                 'type_b'   => $query['type'] ?? null,
-                'categorie_an'=>$query['category'] ?? null,
-                'ville_an'=>$query['city'] ?? null,
+                'categorie_an' => $query['category'] ?? null,
+                'ville_an' => $query['city'] ?? null,
             ];
+            // Remove null values
+            $query = array_filter($query, function ($value) {
+                return $value !== null;
+            });
+        }
 
+        if ($table == "resarvation") {
+            // Only include specific mappings
+            $query = [
+                'date_r_debut'   => $query['reservationDate'] ?? null,
+                'date_r_fin' => $query['finalreservationDate'] ?? null,
+                'etat_r'   => $query['etat'] ?? null,
+                'date_cr' => $query['date'] ?? null,
+                'id_m' => $query['idMember'] ?? null,
+                'id_c' => $query['idClient'] ?? null,
+            ];
             // Remove null values
             $query = array_filter($query, function ($value) {
                 return $value !== null;
@@ -36,7 +51,7 @@ class Filter
                 foreach ($value as $subKey => $subValue) {
                     if (isset(self::$operation[$subKey])) {
                         $operator = self::$operation[$subKey];
-                        $rules[] = [$key, $operator, trim($subValue, '"')]; // Remove extra quotes
+                        $rules[] = [$key, $operator, trim($subValue, '"')];
                     } else {
                         $rules[] = [$key, '=', trim($subValue, '"')];
                     }

@@ -23,7 +23,6 @@ class Validator
             'mobile' => ['required', 'string', 'max:30'],
             'price' => ['nullable', 'numeric'],
             'details' => ['nullable', 'string', 'max:255'],
-            'idMember' => ['required', 'integer', 'exists:membre,id_m'],
             'pricingNature' => ['nullable', 'string', 'max:255'],
             'image' => ['required'],
             'video' => ['nullable'],
@@ -33,7 +32,7 @@ class Validator
         'boost' => [
             'duration' => ['required', 'integer'],
             'price' => ['required', 'numeric'],
-            'etat' => ['string', 'in:attente,active,inactive'], //attend
+            'etat' => ['string', 'in:attente,active,inactive'],
             'idMember' => ['required', 'integer', 'exists:membre,id_m'],
             'idAnnonce' => ['required', 'integer', 'exists:annonce,id_an'],
             'creationDate' => ['date'],
@@ -48,9 +47,6 @@ class Validator
             'phone' => ['required', 'string', 'max:30'],
             'subject' => ['required', 'string', 'max:255'],
             'genre' => ['required', 'string'],
-            'idMember' => ['required', 'integer', 'exists:membre,id_m'],
-            'idClient' => ['required', 'integer', 'exists:client,id_c'],
-            'idModerateur' => ['required', 'integer', 'exists:moderateur,id_mo'],
         ],
 
         'favorite' => [
@@ -66,9 +62,7 @@ class Validator
             'email' => ['required', 'string', 'email', 'max:255'],
             'phone' => ['required', 'string', 'max:30'],
             'type' => ['required', 'string', 'max:255'],
-            'date' => ['required', 'date'],
             'etat' => ['string', 'in:attente,active,inactive'],
-            'idClient' => ['required', 'integer', 'exists:client,id_c'],
             'idMember' => ['required', 'integer', 'exists:membre,id_m'],
             'idAnnonce' => ['required', 'integer', 'exists:annonce,id_an'],
         ],
@@ -175,7 +169,6 @@ class Validator
             'idAnnonce' => ['integer', 'exists:annonce,id_an'],
         ]
     ];
-
     protected $data = [];
 
     public function validateData($data, $table)
@@ -339,10 +332,10 @@ class Validator
                 $allowedMimeTypes = ['video/mp4', 'video/x-matroska', 'video/avi', 'video/mpeg', 'image/jpeg', 'image/png'];
 
                 if (in_array($fileType, $allowedMimeTypes)) {
-                    if ($fileSize <= 15 * 1024 * 1024) {
+                    if ($fileSize <= 20 * 1024 * 1024) {
                         return true;
                     } else {
-                        throw new Exception('The video exceeds the maximum allowed size of 15MB ');
+                        throw new Exception('The video exceeds the maximum allowed size of 20MB ');
                     }
                 } else {
                     throw new Exception('Invalid video type. Only MP4, MKV, AVI, and MPEG formats are allowed.');
@@ -354,4 +347,5 @@ class Validator
             throw new Exception('No video file found.');
         }
     }
+    
 }

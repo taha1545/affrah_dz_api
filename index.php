@@ -1,5 +1,5 @@
 <?php
-// require autoloader
+// for jwt
 require_once __DIR__ . '/vendor/autoload.php';
 // import controolers
 require_once 'Controller/ClientController.php';
@@ -13,17 +13,18 @@ require_once 'Controller/ImageController.php';
 // controller classes 
 $ClientController = new ClientController();
 $membreController = new MembreController();
+//
 $resarvationController = new ResarvationController();
+$contactController = new ContactController();
+//
 $annonceController = new AnnonceController();
 $favorisController = new FavorisController();
 $boostController = new BoostController();
-$contactController = new ContactController();
 $imagesController = new ImageController();
+
 // header type json 
 header('Content-Type: application/json');
-// 
 $url = trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
-//
 $method = $_SERVER['REQUEST_METHOD'];
 // get variable with url to get filter and search 
 $query = [];
@@ -36,7 +37,6 @@ if ($method === 'POST') {
   if (!empty($_FILES)) {
     foreach ($_FILES as $key => $file) {
       if ($key === 'images' && is_array($file['name'])) {
-        // Handle multiple files under 'images'
         $filesArray = [];
         foreach ($file['name'] as $index => $fileName) {
           $filesArray[] = [
@@ -49,7 +49,6 @@ if ($method === 'POST') {
         }
         $data[$key] = $filesArray;
       } else {
-        // Handle single file
         $data[$key] = $file;
       }
     }
@@ -103,7 +102,6 @@ switch (true) {
     break;
 
 
-
     //membre
 
   case ($url === 'membre' && $method === 'GET'):
@@ -148,7 +146,11 @@ switch (true) {
     //resarvation
 
   case ($url === 'resarvation' && $method === 'GET'):
-    $result = $resarvationController->index();
+    $result = $resarvationController->index($query);
+    break;
+
+  case ($url === 'myresarvation' && $method === 'GET'):
+    $result = $resarvationController->myresarvation();
     break;
 
   case (preg_match('/^resarvation\/(\d+)$/', $url, $matches) && $method === 'GET'):
@@ -178,6 +180,13 @@ switch (true) {
   case ($url === 'annonce' && $method === 'GET'):
     $result = $annonceController->index($query);
     break;
+  case ($url === 'myannonce' && $method === 'GET'):
+    $result = $annonceController->myannonce();
+    break;
+
+  case ($url === 'annoncefav' && $method === 'GET'):
+    $result = $annonceController->myfavoris();
+    break;
 
   case ($url === 'annonce/categorie' && $method === 'GET'):
     $result = $annonceController->showcategorie();
@@ -196,6 +205,17 @@ switch (true) {
     // 
     $id = $matches[1];
     $result = $annonceController->show($id);
+    break;
+
+  case (preg_match('/^annonce\/visite\/(\d+)$/', $url, $matches) && $method === 'GET'):
+    // 
+    $id = $matches[1];
+    $result = $annonceController->visite($id);
+    break;
+  case (preg_match('/^annonce\/like\/(\d+)$/', $url, $matches) && $method === 'PUT'):
+    // 
+    $id = $matches[1];
+    $result = $annonceController->like($id);
     break;
 
   case ($url === 'annonce' && $method === 'POST'):
@@ -327,12 +347,6 @@ switch (true) {
   case (preg_match('/^images\/(\d+)$/', $url, $matches) && $method === 'DELETE'):
     $id = $matches[1];
     $result = $imagesController->delete($id);
-    break;
-
-  case ($url == 'test'):
-    $result = [
-      'data' => $data
-    ];
     break;
 
 
