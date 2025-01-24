@@ -8,7 +8,7 @@ class Controller
    protected $client;
    protected $membre;
    protected $annonce;
-   protected $reservation;
+   protected $resarvation;
    protected $favoris;
    protected $boost;
    protected $contact;
@@ -26,7 +26,7 @@ class Controller
       // Initialize Models with the shared connection
       $this->client = new Models('client', $this->conn);
       $this->membre = new Models('membre', $this->conn);
-      $this->reservation = new Models('reservation', $this->conn);
+      $this->resarvation = new Models('reservation', $this->conn);
       $this->annonce = new Models('annonce', $this->conn);
       $this->favoris = new Models('favoris', $this->conn);
       $this->boost = new Models('boost', $this->conn);

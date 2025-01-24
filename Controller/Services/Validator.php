@@ -1,6 +1,7 @@
 <?php
 //
-class Validator
+require_once __DIR__ . '/../Controller.php';
+class Validator extends Controller
 {
     protected $validationRules = [
         'client' => [
@@ -265,7 +266,8 @@ class Validator
 
                     case (strpos($rule, 'unique:') === 0):
                         [$uniqueTable, $uniqueColumn] = explode(',', substr($rule, 7));
-                        $model = new Models($uniqueTable);
+
+                        $model = new Models($uniqueTable, $this->conn);
                         try {
                             $result = $model->find($value, $uniqueColumn);
                             $errors[$field][] = "The {$field} already existe";
@@ -278,7 +280,7 @@ class Validator
                     case (strpos($rule, 'exists:') === 0):
                         [$existsTable, $existsColumn] = explode(',', substr($rule, 7));
 
-                        $model = new Models($existsTable);
+                        $model = new Models($existsTable, $this->conn);
                         try {
                             $result = $model->find($value, $existsColumn);
                         } catch (Exception) {
@@ -347,5 +349,4 @@ class Validator
             throw new Exception('No video file found.');
         }
     }
-    
 }
