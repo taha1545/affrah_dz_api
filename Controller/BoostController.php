@@ -20,6 +20,7 @@ class BoostController extends Controller
       ];
     } catch (Exception $e) {
       //
+      http_response_code(404);
       return [
         'status' => 'error',
         'message' => 'An error occurred while fetching clients',
@@ -67,9 +68,11 @@ class BoostController extends Controller
       ];
     } catch (Exception $e) {
       // error message
+      http_response_code(404);
+      $errorms = json_decode($e->getMessage()) ?? $e->getMessage();
       return [
         'status' => 'error',
-        'message' => $e->getMessage(),
+        'message' => $errorms,
       ];
     }
   }
@@ -93,10 +96,12 @@ class BoostController extends Controller
         'message' => 'Data updated successfully'
       ];
     } catch (Exception $e) {
-      // Handle error
+      // error message
+      http_response_code(404);
+      $errorms = json_decode($e->getMessage()) ?? $e->getMessage();
       return [
         'status' => 'error',
-        'message' => $e->getMessage()
+        'message' => $errorms,
       ];
     }
   }
@@ -111,12 +116,13 @@ class BoostController extends Controller
         'status' => 'success',
         'message' => 'Data deleted successfully'
       ];
-    } catch (Exception  $e) {
-      // Handle error
-      http_response_code(500);
+    } catch (Exception $e) {
+      // error message
+      http_response_code(404);
+      $errorms = json_decode($e->getMessage()) ?? $e->getMessage();
       return [
         'status' => 'error',
-        'message' => $e->getMessage()
+        'message' => $errorms,
       ];
     }
   }
@@ -135,5 +141,4 @@ class BoostController extends Controller
       http_response_code(404);
     }
   }
-  
 }

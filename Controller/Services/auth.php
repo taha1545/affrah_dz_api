@@ -2,14 +2,17 @@
 
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
+use Dotenv\Dotenv;
 
 class Auth
 {
-    private $secret; 
+    private $secret;
 
-    public function __construct($secret = "3zV!8$2jF^aP1@0X#N6LkQw*rD3&m2Ttaha2005")
+    public function __construct()
     {
-        $this->secret = $secret;
+        $dotenv = Dotenv::createImmutable(__DIR__ . '/../..');
+        $dotenv->load();
+        $this->secret = $_ENV['SECRET'] ;
     }
 
     // Generate JWT Token

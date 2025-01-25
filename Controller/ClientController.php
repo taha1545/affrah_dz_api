@@ -4,11 +4,12 @@ require_once 'Services/Collection.php';
 require_once 'Services/Resource.php';
 require_once 'Services/Validator.php';
 require_once 'Services/auth.php';
+require_once 'Services/Mail.php';
 
 class ClientController extends Controller
 {
 
-  //otp send email 
+  //queue
 
 
   public function index()
@@ -76,7 +77,7 @@ class ClientController extends Controller
       http_response_code(404);
       return [
         'status' => 'error',
-        'message' => json_decode($e->getMessage()),
+        'message' => json_decode($e->getMessage()) ?? $e->getMessage(),
       ];
     }
   }
@@ -113,6 +114,7 @@ class ClientController extends Controller
   public function delete($id)
   {
     try {
+      //
       $this->client->delete($id, 'id_c');
       // Return success response
       return [
@@ -287,4 +289,38 @@ class ClientController extends Controller
       ];
     }
   }
+
+  public function  OTP($data)
+  {
+    try {
+      //
+      if (empty($data['email'])) {
+        throw new Exception('email is required');
+      }
+      // 
+      $email = $data['email'];
+      $user = $this->client->find($email, 'email_c');
+      //random number
+      $number = random_int(10000, 99999);
+      // send 
+      $mail = new Mail();
+      if (!$mail->sendmail($email, $number)) {
+        throw new Exception('message not send to $email');
+      }
+      //
+      return [
+        'status' => 'success',
+        'message' => 'mail sent seccefly',
+        'data' => $number
+      ];
+    } catch (Exception $e) {
+      http_response_code(404);
+      return [
+        'status' => 'error',
+        'message' => $e->getMessage()
+      ];
+    }
+  }
+
+
 }

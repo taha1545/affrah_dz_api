@@ -6,10 +6,7 @@ require_once 'Services/Validator.php';
 
 class ResarvationController extends Controller
 {
-
-  //update prblm
-  // more validation 
-  // more auth 
+  // more logic and validation for resarvation
 
   public function index($query = null)
   {
@@ -92,15 +89,27 @@ class ResarvationController extends Controller
       //authentication role 
       $auth = new Auth();
       $user = $auth->checkRole(['client', 'membre']);
-      //
+      $reserv = $this->resarvation->find($id, 'id_r');
+      if ($user['role'] == 'client') {
+        if ($user['sub'] !== $reserv['id_c']) {
+          throw new Exception('this client is not allowed for edite');
+        }
+      }
+      if ($user['role'] == 'membre') {
+        if ($user['sub'] !== $reserv['id_m']) {
+          throw new Exception('this membre is not allowed for edite');
+        }
+      }
+      // validation
       $valide = new Validator();
       $data = $valide->validateData($data, 'updatereservation');
       // resource 
       $data = Resource::UpdateReservation($data);
       // Update operation
-      if ($data !== []) {
-        $this->resarvation->update($id, $data, 'id_r');
+      if (empty($data)) {
+        throw new Exception('emty data given');
       }
+      $this->resarvation->update($id, $data, 'id_r');
       // Return success response
       return [
         'status' => 'success',
@@ -123,6 +132,17 @@ class ResarvationController extends Controller
       //authentication role 
       $auth = new Auth();
       $user = $auth->checkRole(['client', 'membre']);
+      $reserv = $this->resarvation->find($id, 'id_r');
+      if ($user['role'] == 'client') {
+        if ($user['sub'] !== $reserv['id_c']) {
+          throw new Exception('this client is not allowed for edite');
+        }
+      }
+      if ($user['role'] == 'membre') {
+        if ($user['sub'] !== $reserv['id_m']) {
+          throw new Exception('this membre is not allowed for edite');
+        }
+      }
       //
       $this->resarvation->delete($id, 'id_r');
       // Return success response
@@ -132,7 +152,7 @@ class ResarvationController extends Controller
       ];
     } catch (Exception  $e) {
       // Handle error
-      http_response_code(500);
+      http_response_code(404);
       return [
         'status' => 'error',
         'message' => $e->getMessage()
@@ -167,4 +187,5 @@ class ResarvationController extends Controller
       ];
     }
   }
+
 }

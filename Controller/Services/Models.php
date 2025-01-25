@@ -10,7 +10,7 @@ class Models
         'moderateur' => ['photo_mo'],
         'boost' => ['recu_b']
     ];
-    
+
     protected $conn;
 
     protected $Columns = [
@@ -244,6 +244,9 @@ class Models
 
         if (!$stmt->execute()) {
             throw new Exception("Execution Error: " . $stmt->error);
+        }
+        if ($stmt->affected_rows === 0) {
+            throw new Exception("No data found to update.");
         }
 
         return $stmt->affected_rows > 0;
@@ -671,4 +674,48 @@ class Models
         }
         return [];
     }
+
+    public function Searchannonce($word)
+    {
+        if (isset($this->hidden_column[$this->tablename])) {
+            $columns = $this->hidden_column[$this->tablename];
+        } else {
+            $columns = '*';
+        }
+        $searchableColumns = ['nom_an', 'categorie_an', 'type_fete', 'ville_an', 'adresse_an', 'tel_an', 'detail_an'];
+        // 
+        $whereClause = [];
+        foreach ($searchableColumns as $column) {
+            $whereClause[] = "$column LIKE ?";
+        }
+        $whereClause = implode(' OR ', $whereClause);
+        //
+        $sql = "SELECT annonce.*, boost.type_b 
+                FROM annonce 
+                LEFT JOIN boost 
+                ON annonce.id_an = boost.id_an 
+                WHERE $whereClause";
+        $stmt = $this->conn->prepare($sql);
+        //
+        if (!$stmt) {
+            throw new Exception("SQL Error: " . $this->conn->error);
+        }
+        // Bind 
+        $searchWord = "%$word%";
+        $types = str_repeat('s', count($searchableColumns)); 
+        $stmt->bind_param($types, ...array_fill(0, count($searchableColumns), $searchWord));
+        // Execute the query
+        if (!$stmt->execute()) {
+            throw new Exception("Execution Error: " . $stmt->error);
+        }
+        // Fetch the results
+        $result = $stmt->get_result();
+        $data = $result->fetch_all(MYSQLI_ASSOC);
+        // Check if data was found
+        if (empty($data)) {
+            throw new Exception('No data found for the search term: ' . $word);
+        }
+        return $data;
+    }
+    
 }

@@ -23,7 +23,7 @@ class Validator extends Controller
             'phone' => ['string', 'max:30'],
             'mobile' => ['required', 'string', 'max:30'],
             'price' => ['nullable', 'numeric'],
-            'details' => ['nullable', 'string', 'max:255'],
+            'details' => ['nullable', 'string', 'max:500'],
             'pricingNature' => ['nullable', 'string', 'max:255'],
             'image' => ['required'],
             'video' => ['nullable'],
@@ -36,8 +36,6 @@ class Validator extends Controller
             'etat' => ['string', 'in:attente,active,inactive'],
             'idMember' => ['required', 'integer', 'exists:membre,id_m'],
             'idAnnonce' => ['required', 'integer', 'exists:annonce,id_an'],
-            'creationDate' => ['date'],
-            'idModerateur' => ['integer', 'exists:moderateur,id_mo'],
             'image' => ['required'],
         ],
 
@@ -52,8 +50,8 @@ class Validator extends Controller
 
         'favorite' => [
             'idAnnonce' => ['required', 'integer', 'exists:annonce,id_an'],
-            'idClient' => ['required', 'integer', 'exists:client,id_c'],
-            'idMember' => ['required', 'integer', 'exists:membre,id_m'],
+            'idClient' => [ 'integer', 'exists:client,id_c'],
+            'idMember' => [ 'integer', 'exists:membre,id_m'],
         ],
 
         'reservation' => [
@@ -76,10 +74,6 @@ class Validator extends Controller
             'phone' => ['required', 'string', 'min:6', 'max:14', 'unique:membre,tel_m'],
             'mobail' => ['required', 'string', 'min:6', 'max:14', 'unique:membre,mobil_m'],
             'password' => ['required', 'string', 'min:8'],
-            'etat' => ['string', 'in:attente,active,inactive'],
-            'idAdmin' => ['integer', 'exists:admin,id_a'],
-            'banned' => ['string', 'in:non,oui'],
-            'idModerateur' => ['integer', 'exists:moderateur,id_mo'],
             'image' => ['required'],
         ],
 

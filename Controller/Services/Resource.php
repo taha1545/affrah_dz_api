@@ -115,7 +115,7 @@ class Resource
             'id_m' => $data['idMember'],
             'id_an' => $data['idAnnonce'],
             'date_cr_b' =>  date("Y-m-d H:i:s", time()),
-            'id_mo' => $data['idModerateur'] ?? 1,
+            'id_mo' => 1,
             'recu_b' => file_get_contents($data['image']['tmp_name'])
         ];
     }

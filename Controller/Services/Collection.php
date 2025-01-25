@@ -39,6 +39,7 @@ class Collection
                 'price' => (float) $announceData['tarif_an'],
                 'image_full_path' => $announceData['file_path'] . $announceData['file_name'],
                 'type' => $announceData['type_b'],
+                'date'=>$announceData['date_cr'],
                 'rating' => [4, 4.5, 5][array_rand([4, 4.5, 5])],
             ];
         }

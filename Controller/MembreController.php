@@ -7,7 +7,7 @@ require_once 'Services/Validator.php';
 class MembreController  extends Controller
 {
 
-  // otp send email
+  //queue
 
   public function index(){
     try {
@@ -239,4 +239,38 @@ class MembreController  extends Controller
       ];
     }
   }
+
+  public function  OTP($data)
+  {
+    try {
+      //
+      if (empty($data['email'])) {
+        throw new Exception('email is required');
+      }
+      // 
+      $email = $data['email'];
+      $user = $this->membre->find($email, 'email_m');
+      //random number
+      $number = rand(10000, 99999);
+      // send 
+      $mail = new Mail();
+      if (!$mail->sendmail($email, $number)) {
+        throw new Exception('message not send to $email');
+      }
+      //
+      return [
+        'status' => 'success',
+        'message' => 'mail sent seccefly',
+        'data' => $number
+      ];
+    } catch (Exception $e) {
+      http_response_code(404);
+      return [
+        'status' => 'error',
+        'message' => $e->getMessage()
+      ];
+    }
+  }
+   
+
 }

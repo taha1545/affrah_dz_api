@@ -8,10 +8,8 @@ require_once 'Services/Filter.php';
 require_once 'Services/auth.php';
 class AnnonceController  extends Controller
 {
-  //search
-  //update prblm 
-  // more auth 
-
+  //pagination
+  // cache 
 
   public function index($query = null)
   {
@@ -84,7 +82,6 @@ class AnnonceController  extends Controller
       //authentication role 
       $auth = new Auth();
       $decode = $auth->checkRole(['membre']);
-
       //validation of data and files
       $valid = new Validator();
       $data = $valid->validateData($data, 'annonce');
@@ -95,7 +92,6 @@ class AnnonceController  extends Controller
       if (isset($data['video'])) {
         $valid::ValideVideo(video: $data['video']);
       }
-
       //create image and video
       $data['image'] = UploadVideo::CreateImage($data['image']);
       if (isset($data['video'])) {
@@ -137,15 +133,21 @@ class AnnonceController  extends Controller
       //authentication role 
       $auth = new Auth();
       $user = $auth->checkRole(['membre']);
+      $ann = $this->annonce->find($id, 'id_an');
+      //authorize
+      if ($user['sub'] !== $ann['id_m']) {
+        throw new Exception('this membre is not allowed to edite');
+      }
       //
       $valide = new Validator();
       $data = $valide->validateData($data, 'updateannonce');
       // resource 
       $data = Resource::UpdateAnnonce($data);
       // Update operation
-      if ($data !== []) {
-        $this->annonce->update($id, $data, 'id_an');
+      if (empty($data)) {
+        throw new Exception('empty data given');
       }
+      $this->annonce->update($id, $data, 'id_an');
       // Return success response
       return [
         'status' => 'success',
@@ -168,6 +170,11 @@ class AnnonceController  extends Controller
       //authentication role 
       $auth = new Auth();
       $user = $auth->checkRole(['membre']);
+      $ann = $this->annonce->find($id, 'id_an');
+      //authorize
+      if ($user['sub'] !== $ann['id_m']) {
+        throw new Exception('this membre is not allowed to edite');
+      }
       //
       $this->annonce->delete($id, 'id_an');
       // Return success response
@@ -220,6 +227,7 @@ class AnnonceController  extends Controller
     try {
       //
       $data = $this->annonce->allvip();
+      //
       return [
         'status' => 'success',
         'message' => 'data retrieved successfully',
@@ -370,17 +378,18 @@ class AnnonceController  extends Controller
     }
   }
 
-  public function myfavoris() {
+  public function myfavoris()
+  {
     try {
       //authnetication
       $auth = new Auth();
-      $user = $auth->checkRole(['membre','client']);
+      $user = $auth->checkRole(['membre', 'client']);
       // get 
-       if( $user['role'] == 'client'){
-            $data=$this->annonce->allannoncefavoris($user['sub'],'id_c');
-       }else{
-        $data=$this->annonce->allannoncefavoris($user['sub'],'id_m');
-       }
+      if ($user['role'] == 'client') {
+        $data = $this->annonce->allannoncefavoris($user['sub'], 'id_c');
+      } else {
+        $data = $this->annonce->allannoncefavoris($user['sub'], 'id_m');
+      }
       // return
       return [
         'status' => 'success',
@@ -396,5 +405,24 @@ class AnnonceController  extends Controller
     }
   }
 
-
+  public function search($word)
+  {
+    try {
+      //
+      $data = $this->annonce->Searchannonce($word);
+      //
+      return [
+        'status' => 'success',
+        'message' => 'data found successfully',
+        'data' => Collection::returnAnnounces($data)
+      ];
+    } catch (Exception $e) {
+      http_response_code(404);
+      return [
+        'status' => 'error',
+        'message' => $e->getMessage()
+      ];
+    }
+  }
+  
 }

@@ -2,6 +2,8 @@
 
 require_once 'Services/Models.php';
 
+use Dotenv\Dotenv;
+
 class Controller
 {
    protected $conn;
@@ -16,8 +18,17 @@ class Controller
 
    public function __construct()
    {
-      // Create a single shared database connection
-      $this->conn = new mysqli("db", "root", "rootpassword", "affrah");
+      //
+      $dotenv = Dotenv::createImmutable(__DIR__ . '/..');
+      $dotenv->load();
+
+      $dbHost = $_ENV['DB_HOST'] ?? 'db';     
+      $dbUser = $_ENV['DB_USER'] ?? 'root';            
+      $dbPassword = $_ENV['DB_PASSWORD'] ?? 'rootpassword';       
+      $dbName = $_ENV['DB_NAME'] ?? 'affrah';           
+      
+      // Create a MySQL connection
+      $this->conn = new mysqli($dbHost, $dbUser, $dbPassword, $dbName);
 
       if ($this->conn->connect_error) {
          die("Database connection failed: " . $this->conn->connect_error);
