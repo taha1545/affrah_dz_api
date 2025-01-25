@@ -1,7 +1,4 @@
 <?php
-//
-ob_start();
-//
 require 'vendor/autoload.php';
 
 // difine Cors
@@ -26,13 +23,12 @@ $annonceController = new AnnonceController();
 $favorisController = new FavorisController();
 $boostController = new BoostController();
 $imagesController = new ImageController();
-//
-ob_end_flush();
 
 // header type json  and methodes and url
 header('Content-Type: application/json');
 $url = trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
 $method = $_SERVER['REQUEST_METHOD'];
+
 
 // get query and data 
 $query = [];
