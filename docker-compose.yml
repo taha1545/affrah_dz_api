@@ -19,14 +19,14 @@ services:
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: affrah 
+      MYSQL_DATABASE: affrah
       MYSQL_USER: root
       MYSQL_PASSWORD: rootpassword
     ports:
       - "3306:3306"
     volumes:
-      - db_data:/var/lib/mysql 
-      - ./affrahdb.sql:/docker-entrypoint-initdb.d/affrahdb.sql 
+      - db_data:/var/lib/mysql
+      - ./affrahdb.sql:/docker-entrypoint-initdb.d/affrahdb.sql
     healthcheck:
       test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword" ]
       interval: 5s

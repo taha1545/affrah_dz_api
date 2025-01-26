@@ -1,8 +1,8 @@
 <?php
 
 require_once 'Services/Models.php';
+require_once 'Database.php';
 
-use Dotenv\Dotenv;
 
 class Controller
 {
@@ -18,21 +18,7 @@ class Controller
 
    public function __construct()
    {
-      //
-      $dotenv = Dotenv::createImmutable(__DIR__ . '/..');
-      $dotenv->load();
-
-      $dbHost = $_ENV['DB_HOST'] ?? 'db';     
-      $dbUser = $_ENV['DB_USER'] ?? 'root';            
-      $dbPassword = $_ENV['DB_PASSWORD'] ?? 'rootpassword';       
-      $dbName = $_ENV['DB_NAME'] ?? 'affrah';           
-      
-      // Create a MySQL connection
-      $this->conn = new mysqli($dbHost, $dbUser, $dbPassword, $dbName);
-
-      if ($this->conn->connect_error) {
-         die("Database connection failed: " . $this->conn->connect_error);
-      }
+      $this->conn = Database::getConnection();
 
       // Initialize Models with the shared connection
       $this->client = new Models('client', $this->conn);
@@ -45,10 +31,5 @@ class Controller
       $this->images = new Models('images', $this->conn);
    }
 
-   public function __destruct()
-   {
-      if ($this->conn !== null) {
-         $this->conn->close();
-      }
-   }
+   
 }

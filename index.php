@@ -1,10 +1,12 @@
 <?php
+//
 require 'vendor/autoload.php';
 
 // difine Cors
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
+
 //  import controolers
 require_once 'Controller/ClientController.php';
 require_once 'Controller/MembreController.php';
@@ -14,6 +16,7 @@ require_once 'Controller/FavorisController.php';
 require_once 'Controller/BoostController.php';
 require_once 'Controller/ContactController.php';
 require_once 'Controller/ImageController.php';
+require_once 'Controller/Database.php';
 //
 $ClientController = new ClientController();
 $membreController = new MembreController();
@@ -23,6 +26,7 @@ $annonceController = new AnnonceController();
 $favorisController = new FavorisController();
 $boostController = new BoostController();
 $imagesController = new ImageController();
+
 
 // header type json  and methodes and url
 header('Content-Type: application/json');
@@ -371,7 +375,8 @@ switch (true) {
     ];
     break;
 }
-
+// close conn
+Database::closeConnection();
 
 //  final result 
 echo json_encode($result);
