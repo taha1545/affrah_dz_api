@@ -7,9 +7,14 @@ services:
       dockerfile: Dockerfile
     container_name: php-app-container
     volumes:
-      - .:/var/www/html
+      - php-app-data:/var/www/html
     ports:
       - "8000:80"
+    environment:
+      - OPcache.enable=1
+      - OPcache.memory_consumption=256
+      - OPcache.max_accelerated_files=20000
+      - OPcache.revalidate_freq=60
     depends_on:
       - db
 
@@ -32,6 +37,7 @@ services:
       interval: 5s
       timeout: 10s
       retries: 5
+    command: --performance-schema=ON --innodb-buffer-pool-size=1G
 
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
@@ -48,3 +54,4 @@ services:
 
 volumes:
   db_data:
+  php-app-data:

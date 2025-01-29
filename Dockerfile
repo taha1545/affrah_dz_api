@@ -1,7 +1,7 @@
-# Use PHP 8.1 with Apache as the base image
-FROM php:8.1-apache
+# Stage 1: Build
+FROM php:8.1-apache AS build
 
-# Install required dependencies and PHP extensions
+# Install dependencies and PHP extensions
 RUN apt-get update && apt-get install -y \
     libonig-dev \
     libzip-dev \
@@ -9,25 +9,32 @@ RUN apt-get update && apt-get install -y \
     libpng-dev \
     libfreetype6-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo pdo_mysql mysqli mbstring zip gd
+    && docker-php-ext-install pdo pdo_mysql mysqli mbstring zip gd opcache
 
-# Enable Apache mod_rewrite for clean URLs
+# Enable Apache mod_rewrite
 RUN a2enmod rewrite
 
-# Configure PHP file upload limits (Optional: Adjust as needed)
-RUN echo "upload_max_filesize = 50M" > /usr/local/etc/php/conf.d/uploads.ini && \
-    echo "post_max_size = 50M" >> /usr/local/etc/php/conf.d/uploads.ini
+# Copy custom PHP configuration for performance
+COPY ./php.ini /usr/local/etc/php/conf.d/custom.ini
 
-# Set the working directory inside the container
+# Stage 2: Final image
+FROM php:8.1-apache
+
+# Copy PHP extensions and configuration from the build stage
+COPY --from=build /usr/local/etc/php /usr/local/etc/php
+COPY --from=build /usr/local/lib/php/extensions /usr/local/lib/php/extensions
+COPY --from=build /etc/apache2/mods-enabled/rewrite.load /etc/apache2/mods-enabled/rewrite.load
+
+# Set working directory
 WORKDIR /var/www/html
 
-# Copy application files into the container
+# Copy application files
 COPY . .
 
-# Ensure proper permissions for uploaded files
+# Set permissions
 RUN chown -R www-data:www-data /var/www/html && chmod -R 755 /var/www/html
 
-# Expose port 80 for the Apache server
+# Expose port 80
 EXPOSE 80
 
 # Start Apache in the foreground

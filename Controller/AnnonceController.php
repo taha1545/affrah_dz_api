@@ -6,31 +6,27 @@ require_once 'Services/Validator.php';
 require_once 'Services/UploadVideo.php';
 require_once 'Services/Filter.php';
 require_once 'Services/auth.php';
+
 class AnnonceController  extends Controller
 {
   //pagination
   // cache 
+  // more performance
+  // rating
+  //queue
 
   public function index($query = null)
   {
     try {
-      if ($query == null) {
-        //
-        $data = $this->annonce->allannonce();
-        return [
-          'status' => 'success',
-          'message' => 'data retrieved successfully',
-          'data' => Collection::returnAnnounces($data)
-        ];
-      } else {
-        $condition = Filter::Filterquery($query, 'annonce');
-        $data = $this->annonce->whereannonce($condition);
-        return [
-          'status' => 'success',
-          'message' => 'data retrieved successfully',
-          'data' => Collection::returnAnnounces($data)
-        ];
-      }
+      //
+      $data = $query ? $this->annonce->whereannonce(Filter::Filterquery($query, 'annonce'))
+        : $this->annonce->allannonce();
+
+      return [
+        'status' => 'success',
+        'message' => 'data retrieved successfully',
+        'data' => Collection::returnAnnounces($data)
+      ];
     } catch (Exception $e) {
       //
       http_response_code(404);
@@ -40,7 +36,6 @@ class AnnonceController  extends Controller
       ];
     }
   }
-
 
   public function show($id)
   {
@@ -424,5 +419,4 @@ class AnnonceController  extends Controller
       ];
     }
   }
-  
 }
