@@ -172,49 +172,46 @@ class Models
             // Fetch the result
             $result = $stmt->get_result()->fetch_assoc();
             if (!$result) {
+                http_response_code(404);
                 throw new Exception('No resource found');
             }
             return $result;
         } catch (Exception $e) {
             // Log or handle error details (e.g., $e->getMessage())
-            throw new Exception("Error fetching data: " . $e->getMessage());
+            http_response_code(500);
+            throw new Exception("Error fetching data");
         }
     }
 
 
     public function create(array $data): int
     {
-        // Ensure data is not empty
         if (empty($data)) {
-            throw new InvalidArgumentException("Data array cannot be empty.");
+            http_response_code(400);
+            throw new InvalidArgumentException("The data array provided is empty.");
         }
-        // Extract columns and placeholders
         $columns = implode(", ", array_keys($data));
         $placeholders = implode(", ", array_fill(0, count($data), "?"));
         $values = array_values($data);
-        // Determine parameter types
         $types = array_reduce($values, function ($carry, $value) {
             return $carry . (is_int($value) ? "i" : "s");
         }, "");
-        // Prepare SQL statement
         $sql = "INSERT INTO {$this->tablename} ($columns) VALUES ($placeholders)";
         $stmt = $this->conn->prepare($sql);
-        // Handle preparation error
         if (!$stmt) {
-            throw new Exception("SQL Preparation Error: " . $this->conn->error);
+            http_response_code(500);
+            throw new Exception("Failed to prepare the SQL statement.");
         }
-        // Bind parameters dynamically
         if (!$stmt->bind_param($types, ...$values)) {
-            throw new Exception("Parameter Binding Error: " . $stmt->error);
+            http_response_code(500);
+            throw new Exception("Failed to bind parameters to the SQL statement.");
         }
-        // Execute the statement
         if (!$stmt->execute()) {
-            throw new Exception("Execution Error: " . $stmt->error);
+            http_response_code(500);
+            throw new Exception("Failed to execute the SQL statement.");
         }
         $id = $this->conn->insert_id;
-        // Cleanup
         $stmt->close();
-        //
         return $id;
     }
 
@@ -237,16 +234,19 @@ class Models
         $stmt = $this->conn->prepare($sql);
 
         if (!$stmt) {
-            throw new Exception("SQL Error: " . $this->conn->error);
+            http_response_code(500);
+            throw new Exception("Failed to prepare the SQL statement for update.");
         }
 
         $stmt->bind_param($types, ...$values);
 
         if (!$stmt->execute()) {
-            throw new Exception("Execution Error: " . $stmt->error);
+            http_response_code(500);
+            throw new Exception("Failed to execute the update statement.");
         }
         if ($stmt->affected_rows === 0) {
-            throw new Exception("No data found to update.");
+            http_response_code(404);
+            throw new Exception("No matching record found to update.");
         }
 
         return $stmt->affected_rows > 0;
@@ -254,20 +254,22 @@ class Models
 
     public function delete($id, $key)
     {
-
         $sql = "DELETE FROM {$this->tablename} WHERE {$key} = ?";
         $stmt = $this->conn->prepare($sql);
         $stmt->bind_param("i", $id);
 
         if (!$stmt) {
-            throw new Exception("SQL Error: " . $this->conn->error);
+            http_response_code(500);
+            throw new Exception("Failed to prepare the SQL statement for deletion.");
         }
 
         if (!$stmt->execute()) {
-            throw new Exception("Execution Error: " . $stmt->error);
+            http_response_code(500);
+            throw new Exception("Failed to execute the delete statement.");
         }
         if ($stmt->affected_rows <= 0) {
-            throw new Exception('NO DATA FOUND TO DELETE');
+            http_response_code(404);
+            throw new Exception("No matching record found to delete.");
         }
 
         return $stmt->affected_rows > 0;
@@ -379,7 +381,8 @@ class Models
 
             $stmt = $this->conn->prepare($sql);
             if (!$stmt) {
-                throw new Exception("Prepare failed: " . $this->conn->error);
+                http_response_code(500);
+                throw new Exception("NO DATA FOUND");
             }
 
             if ($values) {
@@ -702,7 +705,7 @@ class Models
         }
         // Bind 
         $searchWord = "%$word%";
-        $types = str_repeat('s', count($searchableColumns)); 
+        $types = str_repeat('s', count($searchableColumns));
         $stmt->bind_param($types, ...array_fill(0, count($searchableColumns), $searchWord));
         // Execute the query
         if (!$stmt->execute()) {
@@ -717,5 +720,210 @@ class Models
         }
         return $data;
     }
-    
+
+    public function whereVip($conditions = [], $options = [])
+    {
+        try {
+            $columns = implode(', ', $this->Columns['annonce']);
+            $placeholders = [];
+            $values = [];
+            $types = "";
+            //
+            foreach ($conditions as $condition) {
+                [$column, $operator, $value] = $condition;
+
+                if (is_array($value) && $operator === 'IN') {
+                    $inPlaceholders = implode(',', array_fill(0, count($value), '?'));
+                    $placeholders[] = "$column IN ($inPlaceholders)";
+                    $values = array_merge($values, $value);
+                    $types .= str_repeat('s', count($value));
+                } else {
+                    $placeholders[] = "$column $operator ?";
+                    $values[] = $operator === 'LIKE' ? "%{$value}%" : $value;
+                    $types .= is_int($value) ? "i" : "s";
+                }
+            }
+            //
+            $sql = "SELECT annonce.*, boost.type_b FROM annonce LEFT JOIN boost ON annonce.id_an = boost.id_an";
+
+            if ($placeholders) {
+                $sql .= " WHERE " . implode(" AND ", $placeholders) . " AND boost.type_b = 'vip'";
+            } else {
+                $sql .= " WHERE boost.type_b = 'vip'";
+            }
+            // Ordering
+            if (!empty($options['orderBy'])) {
+                $direction = strtoupper($options['orderDirection'] ?? 'ASC');
+                $sql .= " ORDER BY " . $this->conn->real_escape_string($options['orderBy']) . " $direction";
+            }
+            // Pagination optimization
+            if (isset($options['page'], $options['perPage'])) {
+                $offset = ((int)$options['page'] - 1) * (int)$options['perPage'];
+                $sql .= " LIMIT ? OFFSET ?";
+                $values[] = (int)$options['perPage'];
+                $values[] = $offset;
+                $types .= "ii";
+            }
+
+            $stmt = $this->conn->prepare($sql);
+            if (!$stmt) {
+                throw new Exception("Prepare failed: " . $this->conn->error);
+            }
+
+            if ($values) {
+                $stmt->bind_param($types, ...$values);
+            }
+
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            $data = $result->fetch_all(MYSQLI_ASSOC);
+
+
+            return $data;
+        } catch (Exception $e) {
+            throw new Exception("Error in where query: " . $e->getMessage());
+        }
+    }
+
+    public function whereGold($conditions = [], $options = [])
+    {
+        try {
+            $columns = implode(', ', $this->Columns['annonce']);
+            $placeholders = [];
+            $values = [];
+            $types = "";
+            //
+            foreach ($conditions as $condition) {
+                [$column, $operator, $value] = $condition;
+
+                if (is_array($value) && $operator === 'IN') {
+                    $inPlaceholders = implode(',', array_fill(0, count($value), '?'));
+                    $placeholders[] = "$column IN ($inPlaceholders)";
+                    $values = array_merge($values, $value);
+                    $types .= str_repeat('s', count($value));
+                } else {
+                    $placeholders[] = "$column $operator ?";
+                    $values[] = $operator === 'LIKE' ? "%{$value}%" : $value;
+                    $types .= is_int($value) ? "i" : "s";
+                }
+            }
+            //
+            $sql = "SELECT annonce.*, boost.type_b FROM annonce LEFT JOIN boost ON annonce.id_an = boost.id_an";
+
+            if ($placeholders) {
+                $sql .= " WHERE " . implode(" AND ", $placeholders) . " AND boost.type_b = 'gold'";
+            } else {
+                $sql .= " WHERE boost.type_b = 'gold'";
+            }
+            // Ordering
+            if (!empty($options['orderBy'])) {
+                $direction = strtoupper($options['orderDirection'] ?? 'ASC');
+                $sql .= " ORDER BY " . $this->conn->real_escape_string($options['orderBy']) . " $direction";
+            }
+            // Pagination optimization
+            if (isset($options['page'], $options['perPage'])) {
+                $offset = ((int)$options['page'] - 1) * (int)$options['perPage'];
+                $sql .= " LIMIT ? OFFSET ?";
+                $values[] = (int)$options['perPage'];
+                $values[] = $offset;
+                $types .= "ii";
+            }
+
+            $stmt = $this->conn->prepare($sql);
+            if (!$stmt) {
+                throw new Exception("Prepare failed: " . $this->conn->error);
+            }
+
+            if ($values) {
+                $stmt->bind_param($types, ...$values);
+            }
+
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            $data = $result->fetch_all(MYSQLI_ASSOC);
+
+
+            return $data;
+        } catch (Exception $e) {
+            throw new Exception("Error in where query: " . $e->getMessage());
+        }
+    }
+
+    public function ReservationsByDateClient($startDate, $endDate, $id)
+    {
+        try {
+            // Get the columns for 'reservation' and 'membre' from the Columns array
+            $reservationColumns = ['id_r ', 'date_r_debut', 'date_r_fin', 'etat_r', 'date_cr'];
+            $client = ['id_c', 'nom_c', 'ville_c'];
+            $annoncecolumn = ['id_an', 'nom_an', 'ville_an', 'adresse_an', 'file_path', 'file_name', 'tarif_an'];
+            // Construct the SELECT clause for 'reservation' dynamically
+            $selectReservationColumns = implode(', ', array_map(function ($column) {
+                return 'r.' . $column;
+            }, $reservationColumns));
+            // Construct the SELECT clause for 'membre' dynamically
+            $clients = implode(', ', array_map(function ($column) {
+                return 'c.' . $column;
+            }, $client));
+            //
+            $annoncecolumns = implode(', ', array_map(function ($column) {
+                return 'a.' . $column;
+            }, $annoncecolumn));
+            // Construct the SQL query
+            $sql = "SELECT $selectReservationColumns, $clients, $annoncecolumns
+                        FROM reservation r
+                        JOIN annonce a ON r.id_an = a.id_an
+                        JOIN client c ON r.id_c = c.id_c
+                        WHERE r.date_r_debut BETWEEN ? AND ?
+                        AND r.id_c = ? ORDER BY r.date_r_debut DESC";
+
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bind_param("ssi", $startDate, $endDate, $id);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            //
+            return $result->fetch_all(MYSQLI_ASSOC);
+        } catch (Exception $e) {
+            throw new Exception("Error fetching reservations: " . $e->getMessage());
+        }
+    }
+
+    public function ReservationsByDateMembre($startDate, $endDate, $id)
+    {
+        try {
+            // Get the columns for 'reservation' and 'membre' from the Columns array
+            $reservationColumns = ['id_r ', 'date_r_debut', 'date_r_fin', 'etat_r', 'date_cr'];
+            $membreColumns = ['id_m', 'nom_m', 'ville_m'];
+            $annoncecolumn = ['id_an', 'nom_an', 'ville_an', 'adresse_an', 'file_path', 'file_name', 'tarif_an'];
+            // Construct the SELECT clause for 'reservation' dynamically
+            $selectReservationColumns = implode(', ', array_map(function ($column) {
+                return 'r.' . $column;
+            }, $reservationColumns));
+            // Construct the SELECT clause for 'membre' dynamically
+            $selectMembreColumns = implode(', ', array_map(function ($column) {
+                return 'm.' . $column;
+            }, $membreColumns));
+            //
+            $annoncecolumns = implode(', ', array_map(function ($column) {
+                return 'a.' . $column;
+            }, $annoncecolumn));
+            // Construct the SQL query
+            $sql = "SELECT $selectReservationColumns, $selectMembreColumns, $annoncecolumns
+                    FROM reservation r
+                    JOIN annonce a ON r.id_an = a.id_an
+                    JOIN membre m ON r.id_m = m.id_m
+                    WHERE r.date_r_debut BETWEEN ? AND ?
+                    AND r.id_m = ? ORDER BY r.date_r_debut DESC";
+
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bind_param("ssi", $startDate, $endDate, $id);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            //
+            return $result->fetch_all(MYSQLI_ASSOC);
+        } catch (Exception $e) {
+            throw new Exception("Error fetching reservations: " . $e->getMessage());
+        }
+    }
 }

@@ -4,7 +4,7 @@ require 'vendor/autoload.php';
 //start
 ob_start();
 // Define CORS headers
-header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Origin: * ");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 
@@ -61,28 +61,39 @@ if ($method === 'POST') {
 // routing
 $router = [
   'GET' => [
+    //
     'client' => fn() => $clientController->index(),
     'client/(\d+)' => fn($id) => $clientController->show($id),
+    'client/image/(\d+)' => fn($id) => $clientController->showImage($id),
+    //
     'membre' => fn() => $membreController->index(),
     'membre/(\d+)' => fn($id) => $membreController->show($id),
+    'membre/image/(\d+)' => fn($id) => $membreController->showImage($id),
+    //
     'resarvation' => fn() => $resarvationController->index($query),
     'myresarvation' => fn() => $resarvationController->myresarvation(),
+    'resarvationPlan'=>fn() => $resarvationController->myPlanning($_GET),
     'resarvation/(\d+)' => fn($id) => $resarvationController->show($id),
+    //
     'annonce' => fn() => $annonceController->index($query),
     'myannonce' => fn() => $annonceController->myannonce(),
     'annoncefav' => fn() => $annonceController->myfavoris(),
     'annonce/categorie' => fn() => $annonceController->showcategorie(),
-    'annonce/vip' => fn() => $annonceController->showvip(),
-    'annonce/gold' => fn() => $annonceController->showgold(),
+    'annonce/vip' => fn() => $annonceController->showvip($query),
+    'annonce/gold' => fn() => $annonceController->showgold($query),
     'annonce/(\d+)' => fn($id) => $annonceController->show($id),
     'annonce/search/(.+)' => fn($word) => $annonceController->search(urldecode($word)),
     'annonce/visite/(\d+)' => fn($id) => $annonceController->visite($id),
+    //
     'favoris' => fn() => $favorisController->index(),
     'favoris/(\d+)' => fn($id) => $favorisController->show($id),
+    //
     'boost' => fn() => $boostController->index(),
     'boost/(\d+)' => fn($id) => $boostController->show($id),
+    //
     'contact' => fn() => $contactController->index(),
     'contact/(\d+)' => fn($id) => $contactController->show($id),
+    //
     'images' => fn() => $imagesController->index(),
     'images/(\d+)' => fn($id) => $imagesController->show($id),
   ],
@@ -96,6 +107,7 @@ $router = [
     'membre/login' => fn() => $membreController->login($data),
     'membre/forget' => fn() => $membreController->updatepassword($data),
     'membre/OTP' => fn() => $membreController->OTP($data),
+    //
     'resarvation' => fn() => $resarvationController->create($data),
     'annonce' => fn() => $annonceController->create($data),
     'favoris' => fn() => $favorisController->create($data),
@@ -129,7 +141,7 @@ $router = [
 $matched = false;
 foreach ($router[$method] as $route => $action) {
   if (preg_match('#^' . $route . '$#', $url, $matches)) {
-    array_shift($matches); 
+    array_shift($matches);
     $result = $action(...$matches);
     $matched = true;
     break;

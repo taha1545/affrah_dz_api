@@ -3,6 +3,7 @@ require_once 'Controller.php';
 require_once 'Services/Collection.php';
 require_once 'Services/Resource.php';
 require_once 'Services/Validator.php';
+require_once 'Services/auth.php';
 
 class BoostController extends Controller
 {
@@ -20,7 +21,7 @@ class BoostController extends Controller
       ];
     } catch (Exception $e) {
       //
-      http_response_code(404);
+      http_response_code(500);
       return [
         'status' => 'error',
         'message' => 'An error occurred while fetching clients',
@@ -40,7 +41,7 @@ class BoostController extends Controller
       ];
     } catch (Exception $e) {
       // 
-      http_response_code(404);
+      http_response_code(500);
       return [
         'status' => 'error',
         'message' => 'resource not found',
@@ -52,6 +53,9 @@ class BoostController extends Controller
   public function create($data)
   {
     try {
+      // auth
+       $auth= new Auth();
+       $user=$auth->checkRole(['membre']);
       //validation
       $valid = new Validator();
       $data = $valid->validateData($data, 'boost');
@@ -59,6 +63,7 @@ class BoostController extends Controller
       $valid->ValideImage($data['image']);
       //resource
       $data = Resource::GetBoost($data);
+      $data['id_m']=$user['sub'];
       //create  
       $this->boost->create($data);
       //return true 
@@ -68,7 +73,7 @@ class BoostController extends Controller
       ];
     } catch (Exception $e) {
       // error message
-      http_response_code(404);
+      http_response_code(500);
       $errorms = json_decode($e->getMessage()) ?? $e->getMessage();
       return [
         'status' => 'error',
@@ -97,7 +102,7 @@ class BoostController extends Controller
       ];
     } catch (Exception $e) {
       // error message
-      http_response_code(404);
+      http_response_code(500);
       $errorms = json_decode($e->getMessage()) ?? $e->getMessage();
       return [
         'status' => 'error',
@@ -118,7 +123,7 @@ class BoostController extends Controller
       ];
     } catch (Exception $e) {
       // error message
-      http_response_code(404);
+      http_response_code(500);
       $errorms = json_decode($e->getMessage()) ?? $e->getMessage();
       return [
         'status' => 'error',

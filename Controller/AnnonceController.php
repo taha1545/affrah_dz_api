@@ -24,15 +24,15 @@ class AnnonceController  extends Controller
 
       return [
         'status' => 'success',
-        'message' => 'data retrieved successfully',
+        'message' => 'Data retrieved successfully',
         'data' => Collection::returnAnnounces($data)
       ];
     } catch (Exception $e) {
       //
-      http_response_code(404);
+      http_response_code(500);
       return [
         'status' => 'error',
-        'message' => 'An error occurred while fetching data',
+        'message' => 'Empty Data',
       ];
     }
   }
@@ -57,15 +57,15 @@ class AnnonceController  extends Controller
       //return 
       return [
         'status' => 'success',
-        'message' => 'data retrieved successfully',
+        'message' => 'Data retrieved successfully',
         'data' => Resource::ReturnAnnonce($data)
       ];
     } catch (Exception $e) {
       // 
-      http_response_code(404);
+      http_response_code(500);
       return [
         'status' => 'error',
-        'message' => 'resource not found',
+        'message' => 'Data Not Found',
       ];
     }
   }
@@ -105,18 +105,17 @@ class AnnonceController  extends Controller
       }
       $this->images->bulkcreate($images);
       //return true 
+      http_response_code(201);
       return [
         'status' => 'success',
-        'message' => 'data created success',
+        'message' => 'Data Created successfully',
       ];
       //
-
     } catch (Exception $e) {
-      http_response_code(404);
       $errorms = json_decode($e->getMessage()) ?? $e->getMessage();
       return [
         'status' => 'error',
-        'message' => $errorms
+        'message' => $errorms ,
       ];
     }
   }
@@ -144,16 +143,15 @@ class AnnonceController  extends Controller
       }
       $this->annonce->update($id, $data, 'id_an');
       // Return success response
+      http_response_code(200);
       return [
         'status' => 'success',
         'message' => 'Data updated successfully'
       ];
-    } catch (Exception $e) {
-      http_response_code(404);
-      $errorms = json_decode($e->getMessage()) ?? $e->getMessage();
+    } catch (Exception ) {
       return [
         'status' => 'error',
-        'message' => $errorms
+        'message' => "Can't Update Data"
       ];
     }
   }
@@ -179,10 +177,10 @@ class AnnonceController  extends Controller
       ];
     } catch (Exception  $e) {
       // Handle error
-      http_response_code(404);
+      http_response_code(500);
       return [
         'status' => 'error',
-        'message' => $e->getMessage()
+        'message' => "Can't Delete This !"
       ];
     }
   }
@@ -195,10 +193,11 @@ class AnnonceController  extends Controller
       $data = $this->annonce->allcategorie();
       // Extract only the values of 'categorie_an' into a single array
       $categories = array_map(function ($item) {
+        $number=random_int(2,4);
         return [
           'name' => $item['categorie_an'],
           'number' => (int) $item['count'],
-          'image' => "api/upload/catg.png",
+          'image' => "/catg/$number.png",
         ];
       }, $data);
       //
@@ -209,7 +208,7 @@ class AnnonceController  extends Controller
       ];
     } catch (Exception $e) {
       // Handle exceptions
-      http_response_code(404);
+      http_response_code(500);
       return [
         'status' => 'error',
         'message' => 'An error occurred while fetching data',
@@ -217,11 +216,12 @@ class AnnonceController  extends Controller
     }
   }
 
-  public function showvip()
+  public function showvip($query = null)
   {
     try {
       //
-      $data = $this->annonce->allvip();
+      $data = $query ? $this->annonce->whereVip(Filter::Filterquery($query, 'annonce'))
+        : $this->annonce->allvip();
       //
       return [
         'status' => 'success',
@@ -230,19 +230,21 @@ class AnnonceController  extends Controller
       ];
     } catch (Exception $e) {
       //
-      http_response_code(404);
+      http_response_code(500);
       return [
         'status' => 'error',
-        'message' => 'An error occurred while fetching data',
+        'message' => "Can't fetch data",
       ];
     }
   }
 
-  public function showgold()
+  public function showgold($query = null)
   {
     try {
       //
-      $data = $this->annonce->allboost();
+      $data = $query ? $this->annonce->whereGold(Filter::Filterquery($query, 'annonce'))
+      : $this->annonce->allboost();
+      //
       return [
         'status' => 'success',
         'message' => 'data retrieved successfully',
@@ -250,10 +252,10 @@ class AnnonceController  extends Controller
       ];
     } catch (Exception $e) {
       //
-      http_response_code(404);
+      http_response_code(500);
       return [
         'status' => 'error',
-        'message' => 'An error occurred while fetching data',
+        'message' => "Can't fetch data",
       ];
     }
   }
@@ -291,10 +293,10 @@ class AnnonceController  extends Controller
         'data' => Resource::ReturnAnnonce($data)
       ];
     } catch (Exception $e) {
-      http_response_code(404);
+      http_response_code(500);
       return [
         'status' => 'error',
-        'message' => $e->getMessage()
+        'message' => "Can't Access This Resource"
       ];
     }
   }
@@ -339,13 +341,13 @@ class AnnonceController  extends Controller
       //return 
       return [
         'status' => 'success',
-        'message' => 'like updated successfully',
+        'message' => 'Like updated successfully',
       ];
     } catch (Exception $e) {
-      http_response_code(404);
+      http_response_code(500);
       return [
         'status' => 'error',
-        'message' => $e->getMessage()
+        'message' => "Can't Access This Resource"
       ];
     }
   }
@@ -365,10 +367,10 @@ class AnnonceController  extends Controller
         'data' =>  Collection::returnAnnounces($annonce)
       ];
     } catch (Exception) {
-      http_response_code(404);
+      http_response_code(500);
       return [
         'status' => 'error',
-        'message' => 'error while trynig to get annonces',
+        'message' => 'No Data Found',
       ];
     }
   }
@@ -391,11 +393,11 @@ class AnnonceController  extends Controller
         'message' => 'data retirved seccsefly',
         'data' =>  Collection::returnAnnounces($data)
       ];
-    } catch (Exception $e) {
-      http_response_code(404);
+    } catch (Exception ) {
+      http_response_code(500);
       return [
         'status' => 'error',
-        'message' => $e->getMessage(),
+        'message' => "No Data Found",
       ];
     }
   }
@@ -411,12 +413,15 @@ class AnnonceController  extends Controller
         'message' => 'data found successfully',
         'data' => Collection::returnAnnounces($data)
       ];
-    } catch (Exception $e) {
-      http_response_code(404);
+    } catch (Exception ) {
+      http_response_code(500);
       return [
         'status' => 'error',
-        'message' => $e->getMessage()
+        'message' =>"No Data Found"
       ];
     }
   }
+
+
+  
 }

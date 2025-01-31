@@ -7,6 +7,7 @@ require_once 'Services/Validator.php';
 class ResarvationController extends Controller
 {
   // more logic and validation for resarvation
+  //update
 
   public function index($query = null)
   {
@@ -24,7 +25,7 @@ class ResarvationController extends Controller
       ];
     } catch (Exception $e) {
       //
-      http_response_code(404);
+      http_response_code(500);
       return [
         'status' => 'error',
         'message' => 'An error occurred while fetching data',
@@ -44,7 +45,7 @@ class ResarvationController extends Controller
       ];
     } catch (Exception $e) {
       // 
-      http_response_code(404);
+      http_response_code(500);
       return [
         'status' => 'error',
         'message' => 'resource not found',
@@ -73,7 +74,6 @@ class ResarvationController extends Controller
         'message' => 'data created success',
       ];
     } catch (Exception $e) {
-      http_response_code(404);
       $errorms = json_decode($e->getMessage()) ?? $e->getMessage();
       return [
         'status' => 'error',
@@ -92,6 +92,7 @@ class ResarvationController extends Controller
       $reserv = $this->resarvation->find($id, 'id_r');
       if ($user['role'] == 'client') {
         if ($user['sub'] !== $reserv['id_c']) {
+          http_response_code(403);
           throw new Exception('this client is not allowed for edite');
         }
       }
@@ -116,7 +117,6 @@ class ResarvationController extends Controller
         'message' => 'Data updated successfully'
       ];
     } catch (Exception $e) {
-      http_response_code(404);
       $errorms = json_decode($e->getMessage()) ?? $e->getMessage();
       return [
         'status' => 'error',
@@ -152,7 +152,6 @@ class ResarvationController extends Controller
       ];
     } catch (Exception  $e) {
       // Handle error
-      http_response_code(404);
       return [
         'status' => 'error',
         'message' => $e->getMessage()
@@ -180,7 +179,7 @@ class ResarvationController extends Controller
         'data' => Collection::returnReservations($data)
       ];
     } catch (Exception $e) {
-      http_response_code(404);
+      http_response_code(500);
       return [
         'status' => 'error',
         'message' => "no resarvation found"
@@ -188,4 +187,86 @@ class ResarvationController extends Controller
     }
   }
 
+  public function myPlanning($data)
+  {
+    try {
+      // Date handling and validation
+      $start = $data['StartDate'] ?? "2024-1-1 00:00:00";
+      $final = $data['FinalDate'] ?? date("Y-m-d H:i:s");
+      //
+      if (!DateTime::createFromFormat('Y-m-d', $start) || !DateTime::createFromFormat('Y-m-d', $final)) {
+        throw new InvalidArgumentException('Invalid date format. Use YYYY-MM-DD');
+      }
+      //auth
+      $auth = new Auth();
+      $user = $auth->authMiddleware();
+
+      // Fetch raw data based on role
+      if ($user['role'] == 'membre') {
+        $rawData = $this->resarvation->ReservationsByDateMembre($start, $final, $user['sub']);
+        $roleKey = 'membre';
+        $roleMap = [
+          'id' => 'id_m',
+          'name' => 'nom_m',
+          'city' => 'ville_m'
+        ];
+      } else {
+        $rawData = $this->resarvation->ReservationsByDateClient($start, $final, $user['sub']);
+        $roleKey = 'client';
+        $roleMap = [
+          'id' => 'id_c',
+          'name' => 'nom_c',
+          'city' => 'ville_c'
+        ];
+      }
+
+      // Process data into formatted collection
+      $collection = [];
+      foreach ($rawData as $item) {
+        // Transform reservation data
+        $reservation = [
+          'id' => (int) $item['id_r'],
+          'StartDate' => $item['date_r_debut'],
+          'FinalDate' => $item['date_r_fin'],
+          'etat' => $item['etat_r'],
+          'DateCreation' => $item['date_cr']
+        ];
+
+        // Transform role-specific data
+        $roleData = [
+          'id' => (int) $item[$roleMap['id']],
+          'name' => $item[$roleMap['name']],
+          'city' => $item[$roleMap['city']]
+        ];
+
+        // Transform annonce data with computed fields
+        $annonce = [
+          'id' => (int) $item['id_an'],
+          'name' => $item['nom_an'],
+          'city' => $item['ville_an'],
+          'address' => $item['adresse_an'],
+          'price' => (float) $item['tarif_an'] ?? 0.0,
+          'image_full_path' => $item['file_path'] . $item['file_name'],
+        ];
+
+        $collection[] = [
+          'reservation' => $reservation,
+          $roleKey => $roleData,
+          'annonce' => $annonce
+        ];
+      }
+
+      return [
+        'status' => 'success',
+        'message' => 'Data retrieved successfully',
+        'data' => $collection,
+      ];
+    } catch (Exception $e) {
+      http_response_code(500);
+      return [
+        'status' => 'error',
+        'message' => "No Data Found or Invalid Date Format",
+      ];
+    }
+  }
 }

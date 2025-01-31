@@ -23,7 +23,7 @@ class UploadVideo
             if (move_uploaded_file($fileTmpPath, $destinationPath)) {
                 return [
                     'name' => $uniqueName,
-                    'path' => '/api/' . $uploadDir,
+                    'path' => $uploadDir,
                     'size' => $file['size'] ?? 1
                 ];
             } else {
@@ -54,7 +54,7 @@ class UploadVideo
             if (move_uploaded_file($fileTmpPath, $destinationPath)) {
                 return [
                     'name' => $uniqueName,
-                    'path' => '/api/' . $uploadDir,
+                    'path' =>  $uploadDir,
                     'size' => $file['size'] ?? 1,
                     'type' => $fileExtension
                 ];

@@ -10,6 +10,7 @@ class ClientController extends Controller
 {
 
   //queue
+  //update image 
 
 
   public function index()
@@ -23,7 +24,7 @@ class ClientController extends Controller
       ];
     } catch (Exception $e) {
       //
-      http_response_code(404);
+      http_response_code(500);
       return [
         'status' => 'error',
         'message' => 'An error occurred while fetching clients',
@@ -42,7 +43,7 @@ class ClientController extends Controller
       ];
     } catch (Exception $e) {
       // 
-      http_response_code(404);
+      http_response_code(500);
       return [
         'status' => 'error',
         'message' => 'resource not found',
@@ -67,17 +68,19 @@ class ClientController extends Controller
       $auth = new Auth();
       $token = $auth->generateToken($id, 'client');
       //
+      http_response_code(201);
       return [
         'status' => 'success',
         'message' => 'data created success',
         'token' => $token,
       ];
     } catch (Exception $e) {
-      // error message
-      http_response_code(404);
+      if(empty(json_decode($e->getMessage()))){
+        http_response_code(500);
+      }
       return [
         'status' => 'error',
-        'message' => json_decode($e->getMessage()) ?? $e->getMessage(),
+        'message' => json_decode($e->getMessage()) ?? "Can't SignIn Try Later",
       ];
     }
   }
@@ -102,10 +105,10 @@ class ClientController extends Controller
       ];
     } catch (Exception $e) {
       // Handle error
-      http_response_code(404);
+      http_response_code(500);
       return [
         'status' => 'error',
-        'message' => json_decode($e->getMessage())
+        'message' => "Can't Update Client Data"
       ];
     }
   }
@@ -119,14 +122,14 @@ class ClientController extends Controller
       // Return success response
       return [
         'status' => 'success',
-        'message' => 'Data deleted successfully'
+        'message' => 'User Deleted successfully'
       ];
     } catch (Exception $e) {
       // Handle error
-      http_response_code(404);
+      http_response_code(500);
       return [
         'status' => 'error',
-        'message' => 'An error occurred while deleting the data'
+        'message' => 'Cant Delete This User'
       ];
     }
   }
@@ -156,7 +159,7 @@ class ClientController extends Controller
       } else {
         // Invalid image format
         http_response_code(415);
-        echo "Invalid image format.";
+        echo "Invalid image format";
       }
     } else {
       // Image not found
@@ -169,7 +172,7 @@ class ClientController extends Controller
   {
     // Validate the input
     if (empty($data["email"]) || empty($data["password"])) {
-      http_response_code(400); // Bad Request
+      http_response_code(400); 
       return [
         'status' => 'error',
         'message' => 'Email or password is missing',
@@ -240,14 +243,14 @@ class ClientController extends Controller
             'token' => $token
           ];
         } else {
-          http_response_code(404);
+          http_response_code(400);
           return [
             'status' => 'error',
             'message' => 'password is required '
           ];
         }
       } else {
-        http_response_code(404);
+        http_response_code(400);
         return [
           'status' => 'error',
           'message' => 'email is required '
@@ -255,10 +258,10 @@ class ClientController extends Controller
       }
     } catch (Exception $e) {
       // Handle error
-      http_response_code(404);
+      http_response_code(500);
       return [
         'status' => 'error',
-        'message' => $e->getMessage()
+        'message' => "Can't Update Password"
       ];
     }
   }
@@ -274,7 +277,7 @@ class ClientController extends Controller
           'data' => $auth->validateToken($token)
         ];
       } else {
-        http_response_code(404);
+        http_response_code(401);
         return [
           'status' => 'error',
           'message' => 'token is required'
@@ -282,7 +285,7 @@ class ClientController extends Controller
       }
       //
     } catch (Exception) {
-      http_response_code(404);
+      http_response_code(403);
       return [
         'status' => 'error',
         'message' => 'token not valid'
@@ -295,7 +298,7 @@ class ClientController extends Controller
     try {
       //
       if (empty($data['email'])) {
-        throw new Exception('email is required');
+        throw new Exception('Email is required');
       }
       // 
       $email = $data['email'];
@@ -310,14 +313,14 @@ class ClientController extends Controller
       //
       return [
         'status' => 'success',
-        'message' => 'mail sent seccefly',
+        'message' => 'Mail Sent successfully',
         'data' => $number
       ];
     } catch (Exception $e) {
-      http_response_code(404);
+      http_response_code(500);
       return [
         'status' => 'error',
-        'message' => $e->getMessage()
+        'message' => "Can't Send Mail"
       ];
     }
   }

@@ -19,10 +19,10 @@ class MembreController  extends Controller
       ];
     } catch (Exception) {
       //
-      http_response_code(404);
+      http_response_code(500);
       return [
         'status' => 'error',
-        'message' => 'An error get while fetching membres',
+        'message' => 'No Data Found',
       ];
     }
   }
@@ -38,7 +38,7 @@ class MembreController  extends Controller
       ];
     } catch (Exception $e) {
       // 
-      http_response_code(404);
+      http_response_code(500);
       return [
         'status' => 'error',
         'message' => 'resource not found',
@@ -69,10 +69,9 @@ class MembreController  extends Controller
       ];
     } catch (Exception $e) {
       // error message
-      http_response_code(404);
       return [
         'status' => 'error',
-        'message' => json_decode($e->getMessage()),
+        'message' => json_decode($e->getMessage()) ?? $e->getMessage(),
       ];
     }
   }
@@ -96,7 +95,7 @@ class MembreController  extends Controller
       ];
     } catch (Exception $e) {
       // Handle error
-      http_response_code(404);
+      http_response_code(500);
       return [
         'status' => 'error',
         'message' => json_decode($e->getMessage())
@@ -158,6 +157,7 @@ class MembreController  extends Controller
   {
     // validation
     if (empty($data["email"]) || empty($data["password"])) {
+      http_response_code(421);
       return [
         'status' => 'error',
         'message' => 'no email or password provided'
@@ -176,7 +176,7 @@ class MembreController  extends Controller
           'token' => $auth->generateToken($user['id_m'], 'membre')
         ];
       } else {
-        http_response_code(404);
+        http_response_code(400);
         return [
           'status' => 'error',
           'message' => 'password does not match'
@@ -217,14 +217,14 @@ class MembreController  extends Controller
             'token' => $token
           ];
         } else {
-          http_response_code(404);
+          http_response_code(421);
           return [
             'status' => 'error',
             'message' => 'password is required '
           ];
         }
       } else {
-        http_response_code(404);
+        http_response_code(421);
         return [
           'status' => 'error',
           'message' => 'email is required '
@@ -232,7 +232,7 @@ class MembreController  extends Controller
       }
     } catch (Exception $e) {
       // Handle error
-      http_response_code(404);
+      http_response_code(500);
       return [
         'status' => 'error',
         'message' => $e->getMessage()
@@ -264,7 +264,7 @@ class MembreController  extends Controller
         'data' => $number
       ];
     } catch (Exception $e) {
-      http_response_code(404);
+      http_response_code(500);
       return [
         'status' => 'error',
         'message' => $e->getMessage()

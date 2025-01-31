@@ -12,7 +12,7 @@ class Auth
     {
         $dotenv = Dotenv::createImmutable(__DIR__ . '/../..');
         $dotenv->load();
-        $this->secret = $_ENV['SECRET'] ;
+        $this->secret = $_ENV['SECRET'];
     }
 
     // Generate JWT Token
@@ -22,7 +22,7 @@ class Auth
             'sub' => $userId,
             'role' => $role,
             'iat' => time(),
-            'exp' => time() + (3600 * 240)
+            'exp' => time() + (3600 * 24 * 30)
         ];
 
         return JWT::encode($payload, $this->secret, 'HS256');
@@ -34,8 +34,9 @@ class Auth
         try {
             $decoded = JWT::decode($token, new Key($this->secret, 'HS256'));
             return (array) $decoded;
-        } catch (Exception $e) {
-            throw new Exception($e->getMessage());
+        } catch (Exception) {
+            http_response_code(401);
+            throw new Exception("User Not Found Try Login");
         }
     }
 
@@ -44,8 +45,8 @@ class Auth
     {
         $headers = getallheaders();
         if (!isset($headers['Authorization'])) {
-            http_response_code(401);
-            throw new Exception('u need to login first');
+            http_response_code(403);
+            throw new Exception('This Action Require login First');
         }
         //
         $token = str_replace('Bearer ', '', $headers['Authorization']);
@@ -53,7 +54,7 @@ class Auth
             return $this->validateToken($token);
         } catch (Exception $e) {
             http_response_code(401);
-            throw new Exception('token is not valid');
+            throw new Exception('User Not Found Try Login');
         }
     }
 
@@ -63,7 +64,7 @@ class Auth
         $decoded = $this->authMiddleware();
         $userRole = $decoded['role'];
         if (!in_array($userRole, $requiredRole)) {
-            throw new Exception("This role is not allowed for this user");
+            throw new Exception("you Don't Have Permission");
         }
         return $decoded;
     }

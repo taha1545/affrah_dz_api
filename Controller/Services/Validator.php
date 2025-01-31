@@ -34,9 +34,9 @@ class Validator extends Controller
             'duration' => ['required', 'integer'],
             'price' => ['required', 'numeric'],
             'etat' => ['string', 'in:attente,active,inactive'],
-            'idMember' => ['required', 'integer', 'exists:membre,id_m'],
             'idAnnonce' => ['required', 'integer', 'exists:annonce,id_an'],
             'image' => ['required'],
+            'type' => ['required','in:vip,gold'],
         ],
 
         'contact' => [
@@ -50,8 +50,8 @@ class Validator extends Controller
 
         'favorite' => [
             'idAnnonce' => ['required', 'integer', 'exists:annonce,id_an'],
-            'idClient' => [ 'integer', 'exists:client,id_c'],
-            'idMember' => [ 'integer', 'exists:membre,id_m'],
+            'idClient' => ['integer', 'exists:client,id_c'],
+            'idMember' => ['integer', 'exists:membre,id_m'],
         ],
 
         'reservation' => [
@@ -286,6 +286,7 @@ class Validator extends Controller
         }
         //
         if (!empty($errors)) {
+            http_response_code(422 );
             throw new Exception(json_encode($errors));
         }
         //
@@ -305,16 +306,20 @@ class Validator extends Controller
                     if ($fileSize <= 5 * 1024 * 1024) {
                         $status = true;
                     } else {
-                        throw new Exception('The image exceeds the maximum allowed size of 5MB.');
+                        http_response_code(422);
+                        throw new Exception('The image size is More than 5MB');
                     }
                 } else {
-                    throw new Exception('Invalid image type. Only JPG, PNG are allowed.');
+                    http_response_code(422);
+                    throw new Exception('Invalid image type Only JPG, PNG are allowed.');
                 }
             } else {
-                throw new Exception('File upload error: ' . $image['error']);
+                http_response_code(422);
+                throw new Exception("Can't Uplaod Image");
             }
         } else {
-            throw new Exception('no image found');
+            http_response_code(422);
+            throw new Exception('Empty Image');
         }
     }
 
@@ -334,13 +339,13 @@ class Validator extends Controller
                         throw new Exception('The video exceeds the maximum allowed size of 20MB ');
                     }
                 } else {
-                    throw new Exception('Invalid video type. Only MP4, MKV, AVI, and MPEG formats are allowed.');
+                    throw new Exception('Invalid video type Only MP4 MKV AVI and MPEG allowed.');
                 }
             } else {
-                throw new Exception('File upload error: ' . $video['error']);
+                throw new Exception('Video upload error');
             }
         } else {
-            throw new Exception('No video file found.');
+            throw new Exception('Empty Video');
         }
     }
 }

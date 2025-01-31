@@ -30,7 +30,7 @@ class Mail extends PHPMailer
 
             $this->isHTML(true); // Set email format to HTML
             $this->Subject = 'Forget Password'; // Subject of the email
-            $this->Body = "the OTP number is :".$message; // HTML message body
+            $this->Body = "THE OTP number is :".$message; // HTML message body
             $this->AltBody = strip_tags($message); // Plain text version of the message
 
 
