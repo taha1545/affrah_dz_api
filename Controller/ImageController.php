@@ -71,7 +71,7 @@ class ImageController extends Controller
       // error message
       return [
         'status' => 'error',
-        'message' => $e->getMessage(),
+        'message' => json_decode($e->getMessage()) ?? $e->getMessage(),
       ];
     }
   }

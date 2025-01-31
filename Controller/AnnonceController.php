@@ -115,7 +115,7 @@ class AnnonceController  extends Controller
       $errorms = json_decode($e->getMessage()) ?? $e->getMessage();
       return [
         'status' => 'error',
-        'message' => $errorms ,
+        'message' => $errorms,
       ];
     }
   }
@@ -148,7 +148,7 @@ class AnnonceController  extends Controller
         'status' => 'success',
         'message' => 'Data updated successfully'
       ];
-    } catch (Exception ) {
+    } catch (Exception) {
       return [
         'status' => 'error',
         'message' => "Can't Update Data"
@@ -193,7 +193,7 @@ class AnnonceController  extends Controller
       $data = $this->annonce->allcategorie();
       // Extract only the values of 'categorie_an' into a single array
       $categories = array_map(function ($item) {
-        $number=random_int(2,4);
+        $number = random_int(2, 4);
         return [
           'name' => $item['categorie_an'],
           'number' => (int) $item['count'],
@@ -243,7 +243,7 @@ class AnnonceController  extends Controller
     try {
       //
       $data = $query ? $this->annonce->whereGold(Filter::Filterquery($query, 'annonce'))
-      : $this->annonce->allboost();
+        : $this->annonce->allboost();
       //
       return [
         'status' => 'success',
@@ -339,6 +339,7 @@ class AnnonceController  extends Controller
         ], 'id_an');
       }
       //return 
+      http_response_code(200);
       return [
         'status' => 'success',
         'message' => 'Like updated successfully',
@@ -393,7 +394,7 @@ class AnnonceController  extends Controller
         'message' => 'data retirved seccsefly',
         'data' =>  Collection::returnAnnounces($data)
       ];
-    } catch (Exception ) {
+    } catch (Exception) {
       http_response_code(500);
       return [
         'status' => 'error',
@@ -413,15 +414,12 @@ class AnnonceController  extends Controller
         'message' => 'data found successfully',
         'data' => Collection::returnAnnounces($data)
       ];
-    } catch (Exception ) {
+    } catch (Exception) {
       http_response_code(500);
       return [
         'status' => 'error',
-        'message' =>"No Data Found"
+        'message' => "No Data Found"
       ];
     }
   }
-
-
-  
 }

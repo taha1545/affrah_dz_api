@@ -72,7 +72,7 @@ $router = [
     //
     'resarvation' => fn() => $resarvationController->index($query),
     'myresarvation' => fn() => $resarvationController->myresarvation(),
-    'resarvationPlan'=>fn() => $resarvationController->myPlanning($_GET),
+    'resarvationPlan' => fn() => $resarvationController->myPlanning($_GET),
     'resarvation/(\d+)' => fn($id) => $resarvationController->show($id),
     //
     'annonce' => fn() => $annonceController->index($query),
@@ -120,6 +120,7 @@ $router = [
     'membre/(\d+)' => fn($id) => $membreController->update($id, $data),
     'resarvation/(\d+)' => fn($id) => $resarvationController->update($id, $data),
     'annonce/(\d+)' => fn($id) => $annonceController->update($id, $data),
+    'annonce/like/(\d+)' => fn($id) => $annonceController->like($id),
     'favoris/(\d+)' => fn($id) => $favorisController->update($id, $data),
     'boost/(\d+)' => fn($id) => $boostController->update($id, $data),
     'contact/(\d+)' => fn($id) => $contactController->update($id, $data),
