@@ -12,7 +12,6 @@ class ClientController extends Controller
   //queue
   //update image 
 
-
   public function index()
   {
     try {
@@ -75,7 +74,7 @@ class ClientController extends Controller
         'token' => $token,
       ];
     } catch (Exception $e) {
-      if(empty(json_decode($e->getMessage()))){
+      if (empty(json_decode($e->getMessage()))) {
         http_response_code(500);
       }
       return [
@@ -89,7 +88,16 @@ class ClientController extends Controller
   public function update($id, $data)
   {
     try {
+      //auth
+      $auth = new Auth();
+      $user = $auth->checkRole(['client']);
       //
+      $client = $this->client->find($id, 'id_c');
+      //
+      if ($client['id_c'] !== $user['sub']) {
+        throw new Exception('u cant update this resource');
+      }
+      // validation 
       $valide = new Validator();
       $data = $valide->validateData($data, 'updateclient');
       // resource 
@@ -97,6 +105,8 @@ class ClientController extends Controller
       // Update operation
       if ($data !== []) {
         $this->client->update($id, $data, 'id_c');
+      } else {
+        throw new Exception('no data to update');
       }
       // Return success response
       return [
@@ -108,7 +118,7 @@ class ClientController extends Controller
       http_response_code(500);
       return [
         'status' => 'error',
-        'message' => "Can't Update Client Data"
+        'message' => $e->getMessage()
       ];
     }
   }
@@ -117,8 +127,17 @@ class ClientController extends Controller
   public function delete($id)
   {
     try {
+      //auth
+      $auth = new Auth();
+      $user = $auth->checkRole(['client']);
       //
-      $this->client->delete($id, 'id_c');
+      $client = $this->client->find($id, 'id_c');
+      //
+      if ($client['id_c'] !== $user['sub']) {
+        throw new Exception('u cant delete this resource');
+      }
+      // block user
+      $this->client->update($id, ['signale' => 'oui'], 'id_c');
       // Return success response
       return [
         'status' => 'success',
@@ -172,7 +191,7 @@ class ClientController extends Controller
   {
     // Validate the input
     if (empty($data["email"]) || empty($data["password"])) {
-      http_response_code(400); 
+      http_response_code(400);
       return [
         'status' => 'error',
         'message' => 'Email or password is missing',
@@ -324,6 +343,5 @@ class ClientController extends Controller
       ];
     }
   }
-
-
+  
 }

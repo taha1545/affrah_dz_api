@@ -7,7 +7,6 @@ require_once 'Services/Validator.php';
 class ResarvationController extends Controller
 {
   // more logic and validation for resarvation
-  //update
 
   public function index($query = null)
   {
@@ -204,19 +203,19 @@ class ResarvationController extends Controller
       // Fetch raw data based on role
       if ($user['role'] == 'membre') {
         $rawData = $this->resarvation->ReservationsByDateMembre($start, $final, $user['sub']);
-        $roleKey = 'membre';
-        $roleMap = [
-          'id' => 'id_m',
-          'name' => 'nom_m',
-          'city' => 'ville_m'
-        ];
-      } else {
-        $rawData = $this->resarvation->ReservationsByDateClient($start, $final, $user['sub']);
         $roleKey = 'client';
         $roleMap = [
           'id' => 'id_c',
           'name' => 'nom_c',
           'city' => 'ville_c'
+        ];
+      } else {
+        $rawData = $this->resarvation->ReservationsByDateClient($start, $final, $user['sub']);
+        $roleKey = 'membre';
+        $roleMap = [
+          'id' => 'id_m',
+          'name' => 'nom_m',
+          'city' => 'ville_m'
         ];
       }
 

@@ -62,7 +62,7 @@ class Resource
             'date_cr' =>  date("Y-m-d H:i:s", time()),
             'tel_an' => $data['phone'] ?? null,
             'mobile_an' => $data['mobile'],
-            'tarif_an' => $data['price'] ?? null,
+            'tarif_an' => $data['price'] ?? 0,
             'detail_an' => $data['details'] ?? null,
             'etat_an' => $data['etat'] ?? "attente",
             'id_a' => 1,

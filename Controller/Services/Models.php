@@ -856,25 +856,25 @@ class Models
         try {
             // Get the columns for 'reservation' and 'membre' from the Columns array
             $reservationColumns = ['id_r ', 'date_r_debut', 'date_r_fin', 'etat_r', 'date_cr'];
-            $client = ['id_c', 'nom_c', 'ville_c'];
+            $membre = ['id_m', 'nom_m', 'ville_m'];
             $annoncecolumn = ['id_an', 'nom_an', 'ville_an', 'adresse_an', 'file_path', 'file_name', 'tarif_an'];
             // Construct the SELECT clause for 'reservation' dynamically
             $selectReservationColumns = implode(', ', array_map(function ($column) {
                 return 'r.' . $column;
             }, $reservationColumns));
             // Construct the SELECT clause for 'membre' dynamically
-            $clients = implode(', ', array_map(function ($column) {
-                return 'c.' . $column;
-            }, $client));
+            $membres = implode(', ', array_map(function ($column) {
+                return 'm.' . $column;
+            }, $membre));
             //
             $annoncecolumns = implode(', ', array_map(function ($column) {
                 return 'a.' . $column;
             }, $annoncecolumn));
             // Construct the SQL query
-            $sql = "SELECT $selectReservationColumns, $clients, $annoncecolumns
+            $sql = "SELECT $selectReservationColumns, $membres, $annoncecolumns
                         FROM reservation r
                         JOIN annonce a ON r.id_an = a.id_an
-                        JOIN client c ON r.id_c = c.id_c
+                        JOIN membre m ON r.id_m = m.id_m
                         WHERE r.date_r_debut BETWEEN ? AND ?
                         AND r.id_c = ? ORDER BY r.date_r_debut DESC";
 
@@ -894,25 +894,25 @@ class Models
         try {
             // Get the columns for 'reservation' and 'membre' from the Columns array
             $reservationColumns = ['id_r ', 'date_r_debut', 'date_r_fin', 'etat_r', 'date_cr'];
-            $membreColumns = ['id_m', 'nom_m', 'ville_m'];
+            $client = ['id_c', 'nom_c', 'ville_c'];
             $annoncecolumn = ['id_an', 'nom_an', 'ville_an', 'adresse_an', 'file_path', 'file_name', 'tarif_an'];
             // Construct the SELECT clause for 'reservation' dynamically
             $selectReservationColumns = implode(', ', array_map(function ($column) {
                 return 'r.' . $column;
             }, $reservationColumns));
             // Construct the SELECT clause for 'membre' dynamically
-            $selectMembreColumns = implode(', ', array_map(function ($column) {
-                return 'm.' . $column;
-            }, $membreColumns));
+            $clients = implode(', ', array_map(function ($column) {
+                return 'c.' . $column;
+            }, $client));
             //
             $annoncecolumns = implode(', ', array_map(function ($column) {
                 return 'a.' . $column;
             }, $annoncecolumn));
             // Construct the SQL query
-            $sql = "SELECT $selectReservationColumns, $selectMembreColumns, $annoncecolumns
+            $sql = "SELECT $selectReservationColumns, $clients, $annoncecolumns
                     FROM reservation r
                     JOIN annonce a ON r.id_an = a.id_an
-                    JOIN membre m ON r.id_m = m.id_m
+                    JOIN client c ON r.id_c = c.id_c
                     WHERE r.date_r_debut BETWEEN ? AND ?
                     AND r.id_m = ? ORDER BY r.date_r_debut DESC";
 
@@ -926,4 +926,5 @@ class Models
             throw new Exception("Error fetching reservations: " . $e->getMessage());
         }
     }
+    
 }

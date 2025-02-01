@@ -8,8 +8,10 @@ class MembreController  extends Controller
 {
 
   //queue
+  // update image
 
-  public function index(){
+  public function index()
+  {
     try {
       $members = $this->membre->all();
       return [
@@ -28,7 +30,8 @@ class MembreController  extends Controller
   }
 
 
-  public function show($id){
+  public function show($id)
+  {
     try {
       $membre = $this->membre->find($id, 'id_m');
       return [
@@ -47,7 +50,8 @@ class MembreController  extends Controller
   }
 
 
-  public function create($data){
+  public function create($data)
+  {
     try {
       //validation
       $valid = new Validator();
@@ -80,6 +84,16 @@ class MembreController  extends Controller
   public function update($id, $data)
   {
     try {
+      //auth
+      $auth = new Auth();
+      $user = $auth->checkRole(['membre']);
+      //
+      $membre = $this->membre->find($id, 'id_m');
+      //
+      if ($membre['id_m'] !== $user['sub']) {
+        throw new Exception('u cant update this resource');
+      }
+      // validation 
       $valide = new Validator();
       $data = $valide->validateData($data, 'updatemember');
       // resource 
@@ -87,6 +101,8 @@ class MembreController  extends Controller
       // Update operation
       if ($data !== []) {
         $this->membre->update($id, $data, 'id_m');
+      } else {
+        throw new Exception('no data to update');
       }
       // Return success response
       return [
@@ -98,7 +114,7 @@ class MembreController  extends Controller
       http_response_code(500);
       return [
         'status' => 'error',
-        'message' => json_decode($e->getMessage())
+        'message' => $e->getMessage()
       ];
     }
   }
@@ -107,7 +123,17 @@ class MembreController  extends Controller
   public function delete($id)
   {
     try {
-      $this->membre->delete($id, 'id_m');
+      //auth
+      $auth = new Auth();
+      $user = $auth->checkRole(['membre']);
+      //
+      $membre = $this->membre->find($id, 'id_m');
+      //
+      if ($membre['id_m'] !== $user['sub']) {
+        throw new Exception('u cant delete this resource');
+      }
+      // block user
+      $this->membre->update($id, ['signale' => 'oui'], 'id_m');
       // Return success response
       return [
         'status' => 'success',
@@ -153,7 +179,7 @@ class MembreController  extends Controller
     }
   }
 
-    public function login($data)
+  public function login($data)
   {
     // validation
     if (empty($data["email"]) || empty($data["password"])) {
@@ -192,8 +218,8 @@ class MembreController  extends Controller
     }
   }
 
-
-    public function updatepassword($data){
+  public function updatepassword($data)
+  {
     try {
       // get data 
       $data = [
@@ -271,6 +297,4 @@ class MembreController  extends Controller
       ];
     }
   }
-   
-
 }

@@ -14,6 +14,9 @@ class AnnonceController  extends Controller
   // more performance
   // rating
   //queue
+  //update image 
+  //limit image 
+  //connection 
 
   public function index($query = null)
   {
