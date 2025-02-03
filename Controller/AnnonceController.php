@@ -9,14 +9,14 @@ require_once 'Services/auth.php';
 
 class AnnonceController  extends Controller
 {
-  //pagination
+  //pagination   
   // cache 
   // more performance
   // rating
-  //queue
+  //queue 
   //update image 
   //limit image 
-  //connection 
+  //connection in create
 
   public function index($query = null)
   {
@@ -24,7 +24,7 @@ class AnnonceController  extends Controller
       //
       $data = $query ? $this->annonce->whereannonce(Filter::Filterquery($query, 'annonce'))
         : $this->annonce->allannonce();
-
+      //
       return [
         'status' => 'success',
         'message' => 'Data retrieved successfully',
@@ -44,24 +44,15 @@ class AnnonceController  extends Controller
   {
     try {
       // find annonce
-      $data = $this->annonce->find($id, 'id_an');
-      //get boost
-      try {
-        $data['boost'] = $this->boost->find($id, "id_an");
-      } catch (Exception) {
-        $data['boost'] = [];
-      }
-      // get all images 
-      try {
-        $data['images'] = $this->images->findall($id, "id_an");
-      } catch (Exception) {
-        $data['images'] = [];
-      }
-      //return 
+      $data = $this->annonce->findannonce($id);
+      //update visites
+      $this->annonce->updateVisite($id);
+      //
+      http_response_code(200);
       return [
         'status' => 'success',
         'message' => 'Data retrieved successfully',
-        'data' => Resource::ReturnAnnonce($data)
+        'data' => Resource::ReturnAnnonce($data) + ['allowed' => false]
       ];
     } catch (Exception $e) {
       // 
@@ -83,7 +74,9 @@ class AnnonceController  extends Controller
       //validation of data and files
       $valid = new Validator();
       $data = $valid->validateData($data, 'annonce');
+      //
       $valid::ValideImage($data['image']);
+      //
       foreach ($data['images'] as $file) {
         $valid::ValideImage($file);
       }
@@ -95,18 +88,20 @@ class AnnonceController  extends Controller
       if (isset($data['video'])) {
         $data['video'] = UploadVideo::CreateVideo($data['video']);
       }
-
       //resource
       $oldimages = $data['images'];
       $data['idMember'] = $decode['sub'];
       $data = Resource::GetAnnonce($data);
       //create annonce
       $id_an = $this->annonce->create($data);
+
       //create images
       foreach ($oldimages as $file) {
         $images[] = Resource::GetAlotImages(UploadVideo::CreateImage($file), $id_an);
       }
       $this->images->bulkcreate($images);
+
+
       //return true 
       http_response_code(201);
       return [
@@ -192,22 +187,38 @@ class AnnonceController  extends Controller
   public function showcategorie()
   {
     try {
-      // Fetch all categories
+      // Define allowed categories and their corresponding images
+      $catg = [
+        'Costumes' => '/catg/Costumes.jpg',
+        'Photographe' => '/catg/Photographe.jpg',
+        'Automobiles' => '/catg/Automobiles.jpg',
+        'Dj' => '/catg/Dj.jpg',
+        'Motos' => '/catg/Motos.jpg',
+        'Negafats' => '/catg/Negafats.jpg',
+        'Kaftan' => '/catg/Kaftan.jpg'
+      ];
+
+      // Fetch all categories from database
       $data = $this->annonce->allcategorie();
-      // Extract only the values of 'categorie_an' into a single array
-      $categories = array_map(function ($item) {
-        $number = random_int(2, 4);
+
+      // Filter only allowed categories and assign their fixed images
+      $categories = array_filter($data, function ($item) use ($catg) {
+        return in_array($item['categorie_an'], array_keys($catg));
+      });
+
+      // Map filtered categories with proper images
+      $categories = array_map(function ($item) use ($catg) {
         return [
           'name' => $item['categorie_an'],
           'number' => (int) $item['count'],
-          'image' => "/catg/$number.png",
+          'image' => $catg[$item['categorie_an']],
         ];
-      }, $data);
-      //
+      }, $categories);
+
       return [
         'status' => 'success',
-        'message' => 'data retrieved successfully',
-        'data' => $categories
+        'message' => 'Data retrieved successfully',
+        'data' => array_values($categories) 
       ];
     } catch (Exception $e) {
       // Handle exceptions
@@ -218,6 +229,7 @@ class AnnonceController  extends Controller
       ];
     }
   }
+
 
   public function showvip($query = null)
   {
@@ -270,30 +282,17 @@ class AnnonceController  extends Controller
       $auth = new Auth();
       $user = $auth->authMiddleware();
       // find annonce
-      $data = $this->annonce->find($id, 'id_an');
-      $data['visites'] = $data['visites'] + 1;
-      $viste = $data['visites'];
-      //get boost
-      try {
-        $data['boost'] = $this->boost->find($id, "id_an");
-      } catch (Exception) {
-        $data['boost'] = [];
-      }
-      // get all images 
-      try {
-        $data['images'] = $this->images->findall($id, "id_an");
-      } catch (Exception) {
-        $data['images'] = [];
-      }
-      //update visite
-      $this->annonce->update($id, [
-        'visites' => $viste
-      ], 'id_an');
+      $data = $this->annonce->findannonce($id);
+      //update visites
+      $this->annonce->updateVisite($id);
+      //authorize
+      $allow = (bool) ($data['id_m'] == $user['sub']) && ($user['role'] == 'membre');
       //return 
+      http_response_code(200);
       return [
         'status' => 'success',
         'message' => 'data retrieved successfully',
-        'data' => Resource::ReturnAnnonce($data)
+        'data' => Resource::ReturnAnnonce($data) + ['allowed' => $allow]
       ];
     } catch (Exception $e) {
       http_response_code(500);

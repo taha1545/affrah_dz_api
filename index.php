@@ -103,10 +103,12 @@ $router = [
     'getinfo' => fn() => $clientController->userbytoken($data),
     'client/forget' => fn() => $clientController->updatepassword($data),
     'client/OTP' => fn() => $clientController->OTP($data),
+    'client/image/update/(\d+)'=>fn($id)=>$clientController->updateimage($id,$data),
     'membre' => fn() => $membreController->create($data),
     'membre/login' => fn() => $membreController->login($data),
     'membre/forget' => fn() => $membreController->updatepassword($data),
     'membre/OTP' => fn() => $membreController->OTP($data),
+    'membre/image/update/(\d+)'=>fn($id)=>$membreController->updateimage($id,$data),
     //
     'resarvation' => fn() => $resarvationController->create($data),
     'annonce' => fn() => $annonceController->create($data),

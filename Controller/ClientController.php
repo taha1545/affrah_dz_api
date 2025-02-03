@@ -343,5 +343,39 @@ class ClientController extends Controller
       ];
     }
   }
+
+  public function updateimage($id, $data)
+  {
+    try {
+      //auth
+      $auth = new Auth();
+      $user = $auth->checkRole(['client']);
+      $client = $this->client->find($id, 'id_c');
+      //authorize
+        if($client['id_c'] !== $user['sub']){
+          throw new Exception('u cant update this resource');
+        }
+      //validate image
+        $valid=new Validator();
+        $valid::ValideImage($data['image']);
+        //
+       $image=$data['image'];
+        $this->client->update($id,['photo_c'=>file_get_contents($data['image']['tmp_name'])],'id_c');
+
+      //return true
+      http_response_code(200);
+      return [
+        'status' => 'success',
+        'message' => 'image updated succesfuly'
+      ];
+      //error
+    } catch (Exception) {
+      http_response_code(500);
+      return [
+        'status' => 'error',
+        'message' => 'cant update this image'
+      ];
+    }
+  }
   
 }

@@ -297,4 +297,38 @@ class MembreController  extends Controller
       ];
     }
   }
+
+  public function updateimage($id, $data)
+  {
+    try {
+      //auth
+      $auth = new Auth();
+      $user = $auth->checkRole(['membre']);
+      $client = $this->membre->find($id, 'id_m');
+      //authorize
+      if ($client['id_m'] !== $user['sub']) {
+        throw new Exception('u cant update this resource');
+      }
+      //validate image
+      $valid = new Validator();
+      $valid::ValideImage($data['image']);
+      //
+      $image = $data['image'];
+      $this->membre->update($id, ['photo_m' => file_get_contents($data['image']['tmp_name'])], 'id_m');
+
+      //return true
+      http_response_code(200);
+      return [
+        'status' => 'success',
+        'message' => 'image updated succesfuly'
+      ];
+      //error
+    } catch (Exception) {
+      http_response_code(500);
+      return [
+        'status' => 'error',
+        'message' => 'cant update this image'
+      ];
+    }
+  }
 }

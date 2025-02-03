@@ -2,6 +2,8 @@
 class Models
 {
     protected $tablename;
+
+    // hidden columns are image column ... long blob 
     protected $hidden_column;
     protected $hidden_columns = [
         'client' => ['photo_c'],
@@ -13,6 +15,7 @@ class Models
 
     protected $conn;
 
+    // spesific column from each table to fetch
     protected $Columns = [
         // CLIENT
         'client' => [
@@ -220,7 +223,7 @@ class Models
         $placeholders = [];
         $values = [];
         $types = "";
-
+          
         foreach ($data as $column => $value) {
             $placeholders[] = "$column = ?";
             $values[] = $value;
@@ -287,7 +290,7 @@ class Models
         $result = $stmt->get_result();
         return $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
     }
-
+    // to get just the image
     public function findImage($id, $key)
     {
         //
@@ -335,7 +338,7 @@ class Models
         }
     }
 
-
+    // for fetch all with filter
     public function where($conditions = [], $options = [])
     {
         try {
@@ -400,7 +403,7 @@ class Models
             throw new Exception("Error in where query: " . $e->getMessage());
         }
     }
-
+    // to update password to client or membre
     public function updatepass($key, $keyname, $data)
     {
         // Ensure input data is not empty
@@ -443,7 +446,7 @@ class Models
         return $this->conn->insert_id;
     }
 
-
+    // get all result not just one 
     public function findall($id, $key)
     {
         //
@@ -472,10 +475,17 @@ class Models
         $columns = implode(', ', $this->Columns['annonce']);
         // Select the columns
         try {
-            $sql = "SELECT annonce.*, boost.type_b 
-            FROM annonce 
-            LEFT JOIN boost 
-            ON annonce.id_an = boost.id_an WHERE boost.type_b = 'vip';";
+            $sql = "SELECT a.*, latest_boost.type_b
+            FROM annonce a 
+            JOIN (
+                SELECT 
+                    b.*,
+                    ROW_NUMBER() OVER (PARTITION BY id_an ORDER BY date_cr_b DESC) AS rn
+                FROM boost b
+                WHERE b.type_b = 'vip' AND b.etat_b = 'active' -- Include boost's active state
+            ) latest_boost ON a.id_an = latest_boost.id_an AND latest_boost.rn = 1
+            WHERE a.etat_an = 'active' -- Filter for active annonces
+            ORDER BY a.jaime DESC;";
             $result = $this->conn->query($sql);
         } catch (Exception) {
             throw new Exception("error fetching");
@@ -494,10 +504,17 @@ class Models
         $columns = implode(', ', $this->Columns['annonce']);
         // Select the columns
         try {
-            $sql = "SELECT annonce.*, boost.type_b 
-            FROM annonce 
-            LEFT JOIN boost 
-            ON annonce.id_an = boost.id_an WHERE boost.type_b = 'gold';";
+            $sql = "SELECT a.*, latest_boost.type_b
+            FROM annonce a 
+            JOIN (
+                SELECT 
+                    b.*,
+                    ROW_NUMBER() OVER (PARTITION BY id_an ORDER BY date_cr_b DESC) AS rn
+                FROM boost b
+                WHERE b.type_b = 'gold' AND b.etat_b = 'active' -- Include boost's active state
+            ) latest_boost ON a.id_an = latest_boost.id_an AND latest_boost.rn = 1
+            WHERE a.etat_an = 'active' -- Filter for active annonces
+            ORDER BY a.jaime DESC;";
             $result = $this->conn->query($sql);
         } catch (Exception) {
             throw new Exception("error fetching");
@@ -516,7 +533,8 @@ class Models
         try {
             $sql = "SELECT categorie_an, COUNT(categorie_an) AS count
             FROM annonce
-            GROUP BY categorie_an;";
+            GROUP BY categorie_an
+             ORDER BY count DESC ;";
             $result = $this->conn->query($sql);
         } catch (Exception) {
             throw new Exception("error fetching");
@@ -535,10 +553,18 @@ class Models
         $columns = implode(', ', $this->Columns['annonce']);
         // Select the columns
         try {
-            $sql = "SELECT annonce.*, boost.type_b 
-            FROM annonce 
-            LEFT JOIN boost 
-            ON annonce.id_an = boost.id_an;";
+            $sql = "SELECT a.*, latest_boost.type_b
+            FROM annonce a
+            LEFT JOIN (
+                SELECT b.id_an, b.type_b, b.date_cr_b
+                FROM boost b
+                INNER JOIN (
+                    SELECT id_an, MAX(date_cr_b) AS latest_date
+                    FROM boost
+                    GROUP BY id_an
+                ) latest ON b.id_an = latest.id_an AND b.date_cr_b = latest.latest_date
+            ) latest_boost ON a.id_an = latest_boost.id_an
+            ORDER BY a.jaime DESC;";
             $result = $this->conn->query($sql);
         } catch (Exception) {
             throw new Exception("error fetching");
@@ -574,7 +600,17 @@ class Models
                 }
             }
             //
-            $sql = "SELECT annonce.*, boost.type_b FROM annonce LEFT JOIN boost   ON annonce.id_an = boost.id_an ";
+            $sql = "SELECT a.*, latest_boost.type_b
+            FROM annonce a
+            LEFT JOIN (
+                SELECT b.id_an, b.type_b, b.date_cr_b
+                FROM boost b
+                INNER JOIN (
+                    SELECT id_an, MAX(date_cr_b) AS latest_date
+                    FROM boost
+                    GROUP BY id_an
+                ) latest ON b.id_an = latest.id_an AND b.date_cr_b = latest.latest_date
+            ) latest_boost ON a.id_an = latest_boost.id_an ";
             //
             if ($placeholders) {
                 $sql .= " WHERE " . implode(" AND ", $placeholders);
@@ -583,6 +619,8 @@ class Models
             if (!empty($options['orderBy'])) {
                 $direction = strtoupper($options['orderDirection'] ?? 'ASC');
                 $sql .= " ORDER BY " . $this->conn->real_escape_string($options['orderBy']) . " $direction";
+            } else {
+                $sql .= " ORDER BY a.jaime DESC";
             }
             // Pagination optimization
             if (isset($options['page'], $options['perPage'])) {
@@ -613,7 +651,7 @@ class Models
             throw new Exception("Error in where query: " . $e->getMessage());
         }
     }
-
+    // to create alot of images with one annonce 
     public function bulkcreate(array $data)
     {
         // Ensure data is not empty
@@ -655,7 +693,7 @@ class Models
         //
         $stmt->close();
     }
-
+    // get favoris annonce 
     public function allannoncefavoris($id, $key)
     {
         // Select the columns
@@ -693,11 +731,19 @@ class Models
         }
         $whereClause = implode(' OR ', $whereClause);
         //
-        $sql = "SELECT annonce.*, boost.type_b 
-                FROM annonce 
-                LEFT JOIN boost 
-                ON annonce.id_an = boost.id_an 
-                WHERE $whereClause";
+        $sql = "SELECT a.*, b.type_b
+        FROM annonce a
+        LEFT JOIN (
+         SELECT id_an, type_b
+        FROM (
+        SELECT id_an, type_b, 
+               ROW_NUMBER() OVER (PARTITION BY id_an ORDER BY date_cr_b DESC) AS rn
+        FROM boost ) b_latest
+        WHERE rn = 1
+        ) b ON a.id_an = b.id_an
+        WHERE ($whereClause) AND   a.etat_an = 'active'
+        ORDER BY a.jaime DESC;";
+
         $stmt = $this->conn->prepare($sql);
         //
         if (!$stmt) {
@@ -744,17 +790,26 @@ class Models
                 }
             }
             //
-            $sql = "SELECT annonce.*, boost.type_b FROM annonce LEFT JOIN boost ON annonce.id_an = boost.id_an";
+            $sql = "SELECT a.*, latest_boost.type_b
+            FROM annonce a 
+            JOIN (
+            SELECT 
+               b.*,ROW_NUMBER() OVER (PARTITION BY id_an ORDER BY date_cr_b DESC) AS rn
+            FROM boost b
+            WHERE b.type_b = 'vip' AND b.etat_b = 'active')
+            latest_boost ON a.id_an = latest_boost.id_an AND latest_boost.rn = 1";
 
             if ($placeholders) {
-                $sql .= " WHERE " . implode(" AND ", $placeholders) . " AND boost.type_b = 'vip'";
-            } else {
-                $sql .= " WHERE boost.type_b = 'vip'";
+                $sql .= " WHERE " . implode(" AND ", $placeholders);
             }
+            $sql .= " AND a.etat_an = 'active'";
+
             // Ordering
             if (!empty($options['orderBy'])) {
                 $direction = strtoupper($options['orderDirection'] ?? 'ASC');
                 $sql .= " ORDER BY " . $this->conn->real_escape_string($options['orderBy']) . " $direction";
+            } else {
+                $sql .= " ORDER BY a.jaime DESC";
             }
             // Pagination optimization
             if (isset($options['page'], $options['perPage'])) {
@@ -809,17 +864,25 @@ class Models
                 }
             }
             //
-            $sql = "SELECT annonce.*, boost.type_b FROM annonce LEFT JOIN boost ON annonce.id_an = boost.id_an";
+            $sql = "SELECT a.*, latest_boost.type_b
+            FROM annonce a 
+            JOIN (
+            SELECT 
+               b.*,ROW_NUMBER() OVER (PARTITION BY id_an ORDER BY date_cr_b DESC) AS rn
+            FROM boost b
+            WHERE b.type_b = 'gold' AND b.etat_b = 'active')
+            latest_boost ON a.id_an = latest_boost.id_an AND latest_boost.rn = 1";
 
             if ($placeholders) {
-                $sql .= " WHERE " . implode(" AND ", $placeholders) . " AND boost.type_b = 'gold'";
-            } else {
-                $sql .= " WHERE boost.type_b = 'gold'";
+                $sql .= " WHERE " . implode(" AND ", $placeholders);
             }
+            $sql .= " AND a.etat_an = 'active'";
             // Ordering
             if (!empty($options['orderBy'])) {
                 $direction = strtoupper($options['orderDirection'] ?? 'ASC');
                 $sql .= " ORDER BY " . $this->conn->real_escape_string($options['orderBy']) . " $direction";
+            } else {
+                $sql .= " ORDER BY a.jaime DESC";
             }
             // Pagination optimization
             if (isset($options['page'], $options['perPage'])) {
@@ -850,13 +913,13 @@ class Models
             throw new Exception("Error in where query: " . $e->getMessage());
         }
     }
-
+    // get resarvation for client so he know his planning (annonce,resarvation,membre)
     public function ReservationsByDateClient($startDate, $endDate, $id)
     {
         try {
             // Get the columns for 'reservation' and 'membre' from the Columns array
             $reservationColumns = ['id_r ', 'date_r_debut', 'date_r_fin', 'etat_r', 'date_cr'];
-            $membre = ['id_m', 'nom_m', 'ville_m'];
+            $membre = ['id_m', 'nom_m', 'ville_m','tel_m','email_m'];
             $annoncecolumn = ['id_an', 'nom_an', 'ville_an', 'adresse_an', 'file_path', 'file_name', 'tarif_an'];
             // Construct the SELECT clause for 'reservation' dynamically
             $selectReservationColumns = implode(', ', array_map(function ($column) {
@@ -888,13 +951,13 @@ class Models
             throw new Exception("Error fetching reservations: " . $e->getMessage());
         }
     }
-
+    // get resarvation for membre so he know his planning (annonce,resarvation,client)
     public function ReservationsByDateMembre($startDate, $endDate, $id)
     {
         try {
             // Get the columns for 'reservation' and 'membre' from the Columns array
             $reservationColumns = ['id_r ', 'date_r_debut', 'date_r_fin', 'etat_r', 'date_cr'];
-            $client = ['id_c', 'nom_c', 'ville_c'];
+            $client = ['id_c', 'nom_c', 'ville_c','tel_c','email_c'];
             $annoncecolumn = ['id_an', 'nom_an', 'ville_an', 'adresse_an', 'file_path', 'file_name', 'tarif_an'];
             // Construct the SELECT clause for 'reservation' dynamically
             $selectReservationColumns = implode(', ', array_map(function ($column) {
@@ -926,5 +989,120 @@ class Models
             throw new Exception("Error fetching reservations: " . $e->getMessage());
         }
     }
-    
+     // to select annonce with images and boost informations
+    public function findannonce($id)
+    {
+        // Define all columns for annonce selection
+        $columns = "a.id_an, a.nom_an, a.categorie_an, a.type_fete, a.ville_an, 
+                    a.adresse_an, a.date_cr, a.tel_an, a.mobile_an, a.tarif_an, 
+                    a.detail_an, a.etat_an, a.id_a, a.id_mo, a.id_m, a.nature_tarif, 
+                    a.visites, a.jaime, a.file_path, a.file_path_video, 
+                    a.file_name, a.file_name_video";
+
+        try {
+            // Prepare SQL query with joins
+            $sql = "SELECT 
+                        $columns,
+                        b.id_b, b.duree_b, b.etat_b, b.date_cr_b, b.type_b,
+                        i.id_img, i.nom_img, i.chemin_img, i.id_an AS image_id_an
+                    FROM annonce a
+                    LEFT JOIN boost b ON b.id_an = a.id_an 
+                        AND b.date_cr_b = (SELECT MAX(b2.date_cr_b) FROM boost b2 WHERE b2.id_an = a.id_an)
+                    LEFT JOIN images i ON i.id_an = a.id_an
+                    WHERE a.id_an = ?";
+
+            $stmt = $this->conn->prepare($sql);
+            // Bind parameters and execute
+            $stmt->bind_param("s", $id);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            //
+            if ($result->num_rows === 0) {
+                http_response_code(404);
+                throw new Exception('No resource found');
+            }
+            // Process results to structure images separately
+            $annonce = null;
+            $images = [];
+            //
+            while ($row = $result->fetch_assoc()) {
+                if (!$annonce) {
+                    // Store annonce and boost details only once
+                    $annonce = [
+                        'id_an' => $row['id_an'],
+                        'nom_an' => $row['nom_an'],
+                        'categorie_an' => $row['categorie_an'],
+                        'type_fete' => $row['type_fete'],
+                        'ville_an' => $row['ville_an'],
+                        'adresse_an' => $row['adresse_an'],
+                        'date_cr' => $row['date_cr'],
+                        'tel_an' => $row['tel_an'],
+                        'mobile_an' => $row['mobile_an'],
+                        'tarif_an' => $row['tarif_an'],
+                        'detail_an' => $row['detail_an'],
+                        'etat_an' => $row['etat_an'],
+                        'id_a' => $row['id_a'],
+                        'id_mo' => $row['id_mo'],
+                        'id_m' => $row['id_m'],
+                        'nature_tarif' => $row['nature_tarif'],
+                        'visites' => $row['visites'],
+                        'jaime' => $row['jaime'],
+                        'file_path' => $row['file_path'],
+                        'file_path_video' => $row['file_path_video'],
+                        'file_name' => $row['file_name'],
+                        'file_name_video' => $row['file_name_video'],
+                        'boost' => [
+                            'id_b' => $row['id_b'],
+                            'duree_b' => $row['duree_b'],
+                            'etat_b' => $row['etat_b'],
+                            'date_cr_b' => $row['date_cr_b'],
+                            'type_b' => $row['type_b'],
+                            'id_m' => $row['id_m'],
+                            'id_an' => $row['id_an']
+                        ],
+                        'images' => []
+                    ];
+                }
+                // Add images if available
+                if ($row['id_img']) {
+                    $images[] = [
+                        'id_img' => $row['id_img'],
+                        'nom_img' => $row['nom_img'],
+                        'chemin_img' => $row['chemin_img'],
+                        'id_an' => $row['id_an']
+                    ];
+                }
+            }
+            // Attach images to the response
+            if ($annonce['boost']['id_b'] == null) {
+                $annonce['boost'] = [];
+            }
+            $annonce['images'] = $images;
+            return $annonce;
+        } catch (Exception $e) {
+            http_response_code(500);
+            throw new Exception("Error fetching data: " . $e->getMessage());
+        }
+    }
+          // to update visites of annonce 
+    public function updateVisite($id)
+    {
+        try {
+            // Prepare SQL statement to increment visites
+            $sql = "UPDATE annonce SET visites = visites + 1 WHERE id_an = ?";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bind_param("s", $id);
+            $stmt->execute();
+
+            // Check if the update was successful
+            if ($stmt->affected_rows === 0) {
+                http_response_code(404);
+                throw new Exception("Annonce not found or visites not updated.");
+            }
+        } catch (Exception $e) {
+            http_response_code(500);
+            throw new Exception("Annonce not found or visites not updated.");
+        }
+    }
+
 }
