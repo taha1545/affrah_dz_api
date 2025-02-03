@@ -195,7 +195,8 @@ class AnnonceController  extends Controller
         'Dj' => '/catg/Dj.jpg',
         'Motos' => '/catg/Motos.jpg',
         'Negafats' => '/catg/Negafats.jpg',
-        'Kaftan' => '/catg/Kaftan.jpg'
+        'Kaftan' => '/catg/Kaftan.jpg',
+        'Salle des fetes'=>'/catg/3.png'
       ];
 
       // Fetch all categories from database
@@ -218,7 +219,7 @@ class AnnonceController  extends Controller
       return [
         'status' => 'success',
         'message' => 'Data retrieved successfully',
-        'data' => array_values($categories) 
+        'data' => array_values($categories)
       ];
     } catch (Exception $e) {
       // Handle exceptions
@@ -360,9 +361,9 @@ class AnnonceController  extends Controller
     try {
       //authnetication
       $auth = new Auth();
-      $user = $auth->checkRole(['membre']);
+      $user = $auth->checkRole(['membre']); 
       // get
-      $annonce = $this->annonce->whereannonce([['annonce.id_m', '=', $user['sub']]]);
+      $annonce = $this->annonce->findallannonce($user['sub']);
       // return
       return [
         'status' => 'success',

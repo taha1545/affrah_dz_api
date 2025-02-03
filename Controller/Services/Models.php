@@ -223,7 +223,7 @@ class Models
         $placeholders = [];
         $values = [];
         $types = "";
-          
+
         foreach ($data as $column => $value) {
             $placeholders[] = "$column = ?";
             $values[] = $value;
@@ -467,6 +467,35 @@ class Models
             throw new Exception('No resources found');
         }
         return $data;
+    }
+
+    public function findallannonce($id)
+    {
+        // Select the columns
+        try {
+            $sql = "SELECT a.*, lb.type_b     
+        FROM annonce a
+        LEFT JOIN (
+        SELECT b.id_an, b.type_b
+        FROM (
+        SELECT id_an, type_b, 
+               ROW_NUMBER() OVER (PARTITION BY id_an ORDER BY date_cr_b DESC) AS rn
+        FROM boost
+        ) b
+        WHERE b.rn = 1
+        ) lb ON a.id_an = lb.id_an
+        WHERE  a.id_m = $id
+        ORDER BY a.jaime DESC;";
+            $result = $this->conn->query($sql);
+        } catch (Exception) {
+            throw new Exception("error fetching");
+        }
+        // Fetch and return the data
+        if ($result) {
+            $data = $result->fetch_all(MYSQLI_ASSOC);
+            return $data;
+        }
+        return [];
     }
 
     public function allvip()
@@ -919,7 +948,7 @@ class Models
         try {
             // Get the columns for 'reservation' and 'membre' from the Columns array
             $reservationColumns = ['id_r ', 'date_r_debut', 'date_r_fin', 'etat_r', 'date_cr'];
-            $membre = ['id_m', 'nom_m', 'ville_m','tel_m','email_m'];
+            $membre = ['id_m', 'nom_m', 'ville_m', 'tel_m', 'email_m'];
             $annoncecolumn = ['id_an', 'nom_an', 'ville_an', 'adresse_an', 'file_path', 'file_name', 'tarif_an'];
             // Construct the SELECT clause for 'reservation' dynamically
             $selectReservationColumns = implode(', ', array_map(function ($column) {
@@ -957,7 +986,7 @@ class Models
         try {
             // Get the columns for 'reservation' and 'membre' from the Columns array
             $reservationColumns = ['id_r ', 'date_r_debut', 'date_r_fin', 'etat_r', 'date_cr'];
-            $client = ['id_c', 'nom_c', 'ville_c','tel_c','email_c'];
+            $client = ['id_c', 'nom_c', 'ville_c', 'tel_c', 'email_c'];
             $annoncecolumn = ['id_an', 'nom_an', 'ville_an', 'adresse_an', 'file_path', 'file_name', 'tarif_an'];
             // Construct the SELECT clause for 'reservation' dynamically
             $selectReservationColumns = implode(', ', array_map(function ($column) {
@@ -989,7 +1018,7 @@ class Models
             throw new Exception("Error fetching reservations: " . $e->getMessage());
         }
     }
-     // to select annonce with images and boost informations
+    // to select annonce with images and boost informations
     public function findannonce($id)
     {
         // Define all columns for annonce selection
@@ -1084,7 +1113,7 @@ class Models
             throw new Exception("Error fetching data: " . $e->getMessage());
         }
     }
-          // to update visites of annonce 
+    // to update visites of annonce 
     public function updateVisite($id)
     {
         try {
@@ -1104,5 +1133,4 @@ class Models
             throw new Exception("Annonce not found or visites not updated.");
         }
     }
-
 }
