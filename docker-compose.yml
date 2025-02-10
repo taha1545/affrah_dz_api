@@ -8,7 +8,6 @@ services:
     container_name: php-app-container
     volumes:
       - php-app-data:/var/www/html
-
     ports:
       - "8000:80"
     environment:

@@ -9,14 +9,31 @@ require_once 'Services/auth.php';
 
 class AnnonceController  extends Controller
 {
-  //pagination   
   // cache 
-  // more performance
-  // rating
   //queue 
   //update image 
-  //limit image 
   //connection in create
+  private  $allowedAction = [
+    'Costumes' => ['res', 'cont'],
+    'Automobiles' => ['res'],
+    'Dj' => ['res'],
+    'Negafats' => ['res'],
+    'Kaftan' => ['res', 'cont'],
+    'Salle des fetes' => ['res'],
+    'Groupes de motards' => ['res'],
+    'Bonbons et gâteaux de mariage' => ['cont'],
+    'Sévérité et robes' => ['res'],
+    'Groupes de musique' => ['res'],
+    'Chef professionnel' => ['res', 'cont'],
+    'Appareil photo et photographie' => ['res'],
+    'Costumes du marié' => ['res'],
+    'Coiffure et beauté' => ['res'],
+    'Décoration et fleurs' => ['res', 'cont'],
+    'Hôtels et chambres pour la nuit de noces' => ['res'],
+    'Burnous et chevaux' => ['res'],
+    'Organisateur de fêtes' => ['res'],
+    'Pas de groupe de photographie' => ['res'],
+  ];
 
   public function index($query = null)
   {
@@ -45,14 +62,18 @@ class AnnonceController  extends Controller
     try {
       // find annonce
       $data = $this->annonce->findannonce($id);
-      //update visites
-      $this->annonce->updateVisite($id);
+      //actions
+      if (array_key_exists($data['categorie_an'], $this->allowedAction)) {
+        $action = $this->allowedAction[$data['categorie_an']];
+      } else {
+        $action = ['res', 'cont'];
+      }
       //
       http_response_code(200);
       return [
         'status' => 'success',
         'message' => 'Data retrieved successfully',
-        'data' => Resource::ReturnAnnonce($data) + ['allowed' => false]
+        'data' => Resource::ReturnAnnonce($data) + ['actions' => $action] + ['allowed' => false, 'liked' => false]
       ];
     } catch (Exception $e) {
       // 
@@ -187,39 +208,54 @@ class AnnonceController  extends Controller
   public function showcategorie()
   {
     try {
-      // Define allowed categories and their corresponding images
+      // Define allowed categories with their corresponding images and Arabic names
       $catg = [
-        'Costumes' => '/catg/Costumes.jpg',
-        'Photographe' => '/catg/Photographe.jpg',
-        'Automobiles' => '/catg/Automobiles.jpg',
-        'Dj' => '/catg/Dj.jpg',
-        'Motos' => '/catg/Motos.jpg',
-        'Negafats' => '/catg/Negafats.jpg',
-        'Kaftan' => '/catg/Kaftan.jpg',
-        'Salle des fetes'=>'/catg/3.png'
+        'Salle des fetes' => ['image' => '/catg/3.png', 'ar' => 'قاعة الحفـلات'],
+        'Organisateur de fêtes' => ['image' => '/catg/Organisateurdefêtes.jpg', 'ar' => 'منظم الحفلات'],
+        'Dj' => ['image' => '/catg/Dj.jpg', 'ar' => 'دي جـي'],
+        'Costumes' => ['image' => '/catg/Costumes.jpg', 'ar' => 'بدلات العريـس'],
+        'Hôtels et chambres pour la nuit de noces' => ['image' => '/catg/Hôtelsetchambrespourlanuitdenoces.jpg', 'ar' => 'فنـادق و غرف ليلة الزفـاف'],
+        'Groupes de musique' => ['image' => '/catg/Groupesdemusique.jpg', 'ar' => 'المجموعات الموسيـقـيـة'],
+        'Chef professionnel' => ['image' => '/catg/Chefprofessionnel.jpg', 'ar' => 'طبـاخ محتـرف'],
+        'Automobiles' => ['image' => '/catg/Automobiles.jpg', 'ar' => 'كـراء السيـارات'],
+        'Negafats' => ['image' => '/catg/Negafats.jpg', 'ar' => 'نقافات'],
+        'Kaftan' => ['image' => '/catg/Kaftan.jpg', 'ar' => 'الشـدة و الفساتيـن'],
+        'Groupes de motards' => ['image' => '/catg/Groupesdemotards.jpg', 'ar' => 'مجموعات الدراجات النارية'],
+        'Bonbons et gâteaux de mariage' => ['image' => '/catg/Bonbonsetgâteauxdemariage.jpg', 'ar' => 'حلويـات و كعك الأعراس'],
+        'Sévérité et robes' => ['image' => '/catg/Sévéritéetrobes.jpg', 'ar' => 'الشـدة و الفساتيـن'],
+        'Appareil photo et photographie' => ['image' => '/catg/Appareilphotoetphotographie.jpg', 'ar' => 'الكاميـرا و الفوتوغرافيـا'],
+        'Costumes du marié' => ['image' => '/catg/Costumesdumarié.jpg', 'ar' => 'بدلات العريـس'],
+        'Coiffure et beauté' => ['image' => '/catg/Coiffureetbeauté.jpg', 'ar' => 'حلاقـة و تجميـل'],
+        'Décoration et fleurs' => ['image' => '/catg/Décorationetfleurs.jpg', 'ar' => 'ديكـور و ورود'],
+        'Burnous et chevaux' => ['image' => '/catg/Burnousetchevaux.jpg', 'ar' => 'برنـوس و أحصـنة'],
+        'Pas de groupe de photographie' => ['image' => '/catg/Pasdegroupedephotographie.jpg', 'ar' => 'فرقـة ممنـوع التصـويـر'],
       ];
 
-      // Fetch all categories from database
+      // Fetch all categories from the database
       $data = $this->annonce->allcategorie();
 
-      // Filter only allowed categories and assign their fixed images
-      $categories = array_filter($data, function ($item) use ($catg) {
-        return in_array($item['categorie_an'], array_keys($catg));
-      });
-
-      // Map filtered categories with proper images
-      $categories = array_map(function ($item) use ($catg) {
-        return [
-          'name' => $item['categorie_an'],
-          'number' => (int) $item['count'],
-          'image' => $catg[$item['categorie_an']],
+      // Initialize categories with zero count
+      $categories = [];
+      foreach ($catg as $name => $info) {
+        $categories[$name] = [
+          'name' => $name,
+          'name_ar' => $info['ar'], // Arabic name field
+          'number' => 0,
+          'image' => $info['image'],
         ];
-      }, $categories);
+      }
+
+      // Update counts for categories found in the database
+      foreach ($data as $item) {
+        if (isset($categories[$item['categorie_an']])) {
+          $categories[$item['categorie_an']]['number'] = (int) $item['count'];
+        }
+      }
 
       return [
         'status' => 'success',
         'message' => 'Data retrieved successfully',
-        'data' => array_values($categories)
+        'data' => array_values($categories),
       ];
     } catch (Exception $e) {
       // Handle exceptions
@@ -234,15 +270,24 @@ class AnnonceController  extends Controller
 
   public function showvip($query = null)
   {
+    if (isset($query['page'])) {
+      $page = $query['page'];
+      unset($query['page']);
+    } else {
+      $page = 1;
+    }
     try {
       //
-      $data = $query ? $this->annonce->whereVip(Filter::Filterquery($query, 'annonce'))
-        : $this->annonce->allvip();
+      $info = $query ? $this->annonce->whereVip(Filter::Filterquery($query, 'annonce'), $page)
+        : $this->annonce->allvip($page);
+      $data = $info['data'];
+      $paginate = $info['paginate'];
       //
       return [
         'status' => 'success',
         'message' => 'data retrieved successfully',
-        'data' => Collection::returnAnnounces($data)
+        'data' => Collection::returnAnnounces($data),
+        'info' => $paginate
       ];
     } catch (Exception $e) {
       //
@@ -256,15 +301,24 @@ class AnnonceController  extends Controller
 
   public function showgold($query = null)
   {
+    if (isset($query['page'])) {
+      $page = $query['page'];
+      unset($query['page']);
+    } else {
+      $page = 1;
+    }
     try {
       //
-      $data = $query ? $this->annonce->whereGold(Filter::Filterquery($query, 'annonce'))
-        : $this->annonce->allboost();
+      $info = $query ? $this->annonce->whereGold(Filter::Filterquery($query, 'annonce'), $page)
+        : $this->annonce->allboost($page);
+      $data = $info['data'];
+      $paginate = $info['paginate'];
       //
       return [
         'status' => 'success',
         'message' => 'data retrieved successfully',
-        'data' => Collection::returnAnnounces($data)
+        'data' => Collection::returnAnnounces($data),
+        'info' => $paginate
       ];
     } catch (Exception $e) {
       //
@@ -279,21 +333,41 @@ class AnnonceController  extends Controller
   public function visite($id)
   {
     try {
-      //authnetication
+      // Authentication
       $auth = new Auth();
       $user = $auth->authMiddleware();
-      // find annonce
+      // Find annonce
       $data = $this->annonce->findannonce($id);
-      //update visites
-      $this->annonce->updateVisite($id);
-      //authorize
+      //
+      session_start();
+      $sessionKey = "visited_{$id}_{$user['sub']}";
+      //
+      if (!isset($_SESSION[$sessionKey])) {
+        $this->annonce->updateVisite($id);
+        $_SESSION[$sessionKey] = true;
+      }
+      // Authorization
       $allow = (bool) ($data['id_m'] == $user['sub']) && ($user['role'] == 'membre');
-      //return 
+      //actions
+      if (array_key_exists($data['categorie_an'], $this->allowedAction)) {
+        $action = $this->allowedAction[$data['categorie_an']];
+      } else {
+        $action = ['res', 'cont'];
+      }
+      //liked 
+      if ($user['role'] == 'client') {
+        $favorisList = $this->favoris->findfavoris($user['sub'], 'id_c');
+      } else {
+        $favorisList = $this->favoris->findfavoris($user['sub'], 'id_m');
+      }
+      $favorisValues = array_column($favorisList, 'id_c');
+      $liked = in_array($user['sub'], $favorisValues);
+      // Return response
       http_response_code(200);
       return [
         'status' => 'success',
-        'message' => 'data retrieved successfully',
-        'data' => Resource::ReturnAnnonce($data) + ['allowed' => $allow]
+        'message' => 'Data retrieved successfully',
+        'data' => Resource::ReturnAnnonce($data) + ['allowed' => $allow] + ['actions' => $action, 'liked' => $liked]
       ];
     } catch (Exception $e) {
       http_response_code(500);
@@ -303,6 +377,7 @@ class AnnonceController  extends Controller
       ];
     }
   }
+
 
   public function like($id)
   {
@@ -361,7 +436,7 @@ class AnnonceController  extends Controller
     try {
       //authnetication
       $auth = new Auth();
-      $user = $auth->checkRole(['membre']); 
+      $user = $auth->checkRole(['membre']);
       // get
       $annonce = $this->annonce->findallannonce($user['sub']);
       // return
@@ -406,22 +481,51 @@ class AnnonceController  extends Controller
     }
   }
 
-  public function search($word)
+  public function search($word, $query = null)
   {
+    if (isset($query['page'])) {
+      $page = $query['page'];
+      unset($query['page']);
+    } else {
+      $page = 1;
+    }
     try {
       //
-      $data = $this->annonce->Searchannonce($word);
+      $info = $this->annonce->Searchannonce($word, $page);
+      $data = $info['data'];
+      $paginate = $info['paginate'];
       //
       return [
         'status' => 'success',
         'message' => 'data found successfully',
-        'data' => Collection::returnAnnounces($data)
+        'data' => Collection::returnAnnounces($data),
+        'info' => $paginate
       ];
     } catch (Exception) {
       http_response_code(500);
       return [
         'status' => 'error',
         'message' => "No Data Found"
+      ];
+    }
+  }
+
+  public function annoncebymembre($id)
+  {
+    try {
+      // get
+      $annonce = $this->annonce->findallannonce($id);
+      // return
+      return [
+        'status' => 'success',
+        'message' => 'data retirved seccsefly',
+        'data' =>  Collection::returnAnnounces($annonce)
+      ];
+    } catch (Exception) {
+      http_response_code(500);
+      return [
+        'status' => 'error',
+        'message' => 'No Data Found',
       ];
     }
   }

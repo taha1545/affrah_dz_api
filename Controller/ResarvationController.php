@@ -7,7 +7,7 @@ require_once 'Services/Validator.php';
 class ResarvationController extends Controller
 {
   // more logic and validation for resarvation
-  
+
 
   public function index($query = null)
   {
@@ -134,12 +134,12 @@ class ResarvationController extends Controller
       $auth = new Auth();
       $user = $auth->checkRole(['client', 'membre']);
       $reserv = $this->resarvation->find($id, 'id_r');
-      if ($user['role'] == 'client' ) {
+      if ($user['role'] == 'client') {
         if ($user['sub'] !== $reserv['id_c']) {
           throw new Exception('this client is not allowed for delete');
         }
-        if($reserv['etat_r'] == "active"){
-           throw new Exception("this resarvation can't be deleted");
+        if ($reserv['etat_r'] == "active") {
+          throw new Exception("this resarvation can't be deleted");
         }
       }
       if ($user['role'] == 'membre') {
@@ -213,8 +213,8 @@ class ResarvationController extends Controller
           'id' => 'id_c',
           'name' => 'nom_c',
           'city' => 'ville_c',
-          'email'=>'email_c',
-          'phone'=>'tel_c'
+          'email' => 'email_c',
+          'phone' => 'tel_c'
         ];
       } else {
         $rawData = $this->resarvation->ReservationsByDateClient($start, $final, $user['sub']);
@@ -223,8 +223,8 @@ class ResarvationController extends Controller
           'id' => 'id_m',
           'name' => 'nom_m',
           'city' => 'ville_m',
-           'email'=>'email_m',
-          'phone'=>'tel_m'
+          'email' => 'email_m',
+          'phone' => 'tel_m'
         ];
       }
 
@@ -245,8 +245,8 @@ class ResarvationController extends Controller
           'id' => (int) $item[$roleMap['id']],
           'name' => $item[$roleMap['name']],
           'city' => $item[$roleMap['city']],
-          'email'=>$item[$roleMap['email']],
-          'phone'=>$item[$roleMap['phone']]
+          'email' => $item[$roleMap['email']],
+          'phone' => $item[$roleMap['phone']]
         ];
 
         // Transform annonce data with computed fields
@@ -279,6 +279,4 @@ class ResarvationController extends Controller
       ];
     }
   }
-
-
 }

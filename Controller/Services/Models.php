@@ -213,6 +213,7 @@ class Models
             http_response_code(500);
             throw new Exception("Failed to execute the SQL statement.");
         }
+        //
         $id = $this->conn->insert_id;
         $stmt->close();
         return $id;
@@ -312,29 +313,6 @@ class Models
         //
         if ($result) {
             return $result;
-        }
-    }
-
-    //not yet
-    public function Search($key = [])
-    {
-        if (isset($this->hidden_column[$this->tablename])) {
-            $columns = $this->hidden_column[$this->tablename];
-        } else {
-            $columns = '*';
-        }
-        $sql = "SELECT $columns FROM {$this->tablename}";
-        $result = $this->conn->query($sql);
-
-        //search 
-        if ($result) {
-            $data = $result->fetch_all(MYSQLI_ASSOC);
-        } else {
-            $data = [];
-        }
-        if (!$data) {
-            throw new Exception('no data found to search');
-        } else {
         }
     }
 
@@ -473,19 +451,25 @@ class Models
     {
         // Select the columns
         try {
-            $sql = "SELECT a.*, lb.type_b     
-        FROM annonce a
-        LEFT JOIN (
-        SELECT b.id_an, b.type_b
-        FROM (
-        SELECT id_an, type_b, 
+            $sql = "SELECT a.*, lb.type_b
+            FROM annonce a
+            LEFT JOIN (
+            SELECT b.id_an, b.type_b, b.date_cr_b
+            FROM (
+            SELECT id_an, type_b, date_cr_b,
                ROW_NUMBER() OVER (PARTITION BY id_an ORDER BY date_cr_b DESC) AS rn
-        FROM boost
-        ) b
-        WHERE b.rn = 1
-        ) lb ON a.id_an = lb.id_an
-        WHERE  a.id_m = $id
-        ORDER BY a.jaime DESC;";
+            FROM boost
+             ) b
+             WHERE b.rn = 1
+             ) lb ON  a.id_an = lb.id_an
+             WHERE a.id_m = $id
+             ORDER BY 
+            CASE 
+            WHEN lb.type_b = 'VIP' THEN 1
+            WHEN lb.type_b = 'Gold' THEN 2
+            ELSE 3 END,
+            lb.date_cr_b DESC,
+            a.jaime DESC;";
             $result = $this->conn->query($sql);
         } catch (Exception) {
             throw new Exception("error fetching");
@@ -498,62 +482,97 @@ class Models
         return [];
     }
 
-    public function allvip()
+    public function allvip($page = 1, $perPage = 30)
     {
-        //
         $columns = implode(', ', $this->Columns['annonce']);
-        // Select the columns
+        $offset = ($page - 1) * $perPage;
+        //
         try {
+            // Count total records for pagination
+            $countSql = "SELECT COUNT(*) as total FROM annonce a 
+                     JOIN boost b ON a.id_an = b.id_an
+                     WHERE b.type_b = 'vip' AND b.etat_b = 'active' AND a.etat_an = 'active'";
+            //         
+            $countResult = $this->conn->query($countSql);
+            $totalRows = $countResult->fetch_assoc()['total'];
+            $totalPages = ceil($totalRows / $perPage);
+            // Fetch paginated results
             $sql = "SELECT a.*, latest_boost.type_b
-            FROM annonce a 
-            JOIN (
-                SELECT 
-                    b.*,
-                    ROW_NUMBER() OVER (PARTITION BY id_an ORDER BY date_cr_b DESC) AS rn
-                FROM boost b
-                WHERE b.type_b = 'vip' AND b.etat_b = 'active' -- Include boost's active state
-            ) latest_boost ON a.id_an = latest_boost.id_an AND latest_boost.rn = 1
-            WHERE a.etat_an = 'active' -- Filter for active annonces
-            ORDER BY a.jaime DESC;";
+                FROM annonce a 
+                JOIN (
+                    SELECT 
+                        b.*,
+                        ROW_NUMBER() OVER (PARTITION BY id_an ORDER BY date_cr_b DESC) AS rn
+                    FROM boost b
+                    WHERE b.type_b = 'vip' AND b.etat_b = 'active'
+                ) latest_boost ON a.id_an = latest_boost.id_an AND latest_boost.rn = 1
+                WHERE a.etat_an = 'active'
+                ORDER BY a.date_cr DESC, a.jaime DESC
+                LIMIT $perPage OFFSET $offset";
+            //
             $result = $this->conn->query($sql);
         } catch (Exception) {
             throw new Exception("error fetching");
         }
-        // Fetch and return the data
-        if ($result) {
-            $data = $result->fetch_all(MYSQLI_ASSOC);
-            return $data;
-        }
-        return [];
+        // Fetch data
+        $data = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
+        // Add pagination metadata to $result
+        return [
+            'paginate' => [
+                'current_page' => (int) $page,
+                'per_page' => $perPage,
+                'total_rows' => $totalRows,
+                'total_pages' => $totalPages,
+            ],
+            'data' => $data
+        ];
     }
 
-    public function allboost()
+
+    public function allboost($page = 1, $perPage = 30)
     {
-        //
         $columns = implode(', ', $this->Columns['annonce']);
-        // Select the columns
+        $offset = ($page - 1) * $perPage;
+        //
         try {
+            // Count total records for pagination
+            $countSql = "SELECT COUNT(*) as total FROM annonce a 
+                     JOIN boost b ON a.id_an = b.id_an
+                     WHERE b.type_b = 'gold' AND b.etat_b = 'active' AND a.etat_an = 'active'";
+            //         
+            $countResult = $this->conn->query($countSql);
+            $totalRows = $countResult->fetch_assoc()['total'];
+            $totalPages = ceil($totalRows / $perPage);
+            // Fetch paginated results
             $sql = "SELECT a.*, latest_boost.type_b
-            FROM annonce a 
-            JOIN (
-                SELECT 
-                    b.*,
-                    ROW_NUMBER() OVER (PARTITION BY id_an ORDER BY date_cr_b DESC) AS rn
-                FROM boost b
-                WHERE b.type_b = 'gold' AND b.etat_b = 'active' -- Include boost's active state
-            ) latest_boost ON a.id_an = latest_boost.id_an AND latest_boost.rn = 1
-            WHERE a.etat_an = 'active' -- Filter for active annonces
-            ORDER BY a.jaime DESC;";
+                FROM annonce a 
+                JOIN (
+                    SELECT 
+                        b.*,
+                        ROW_NUMBER() OVER (PARTITION BY id_an ORDER BY date_cr_b DESC) AS rn
+                    FROM boost b
+                    WHERE b.type_b = 'gold' AND b.etat_b = 'active'
+                ) latest_boost ON a.id_an = latest_boost.id_an AND latest_boost.rn = 1
+                WHERE a.etat_an = 'active'
+                ORDER BY a.date_cr DESC, a.jaime DESC
+                LIMIT $perPage OFFSET $offset";
+            //
             $result = $this->conn->query($sql);
         } catch (Exception) {
             throw new Exception("error fetching");
         }
-        // Fetch and return the data
-        if ($result) {
-            $data = $result->fetch_all(MYSQLI_ASSOC);
-            return $data;
-        }
-        return [];
+        // Fetch data
+        $data = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
+        // Add pagination metadata to $result
+        return [
+            'paginate' => [
+                'current_page' => (int) $page,
+                'per_page' => $perPage,
+                'total_rows' => $totalRows,
+                'total_pages' => $totalPages,
+            ],
+            'data' => $data
+        ];
     }
 
     public function allcategorie()
@@ -731,7 +750,9 @@ class Models
                   FROM annonce a
                   JOIN favoris f ON a.id_an = f.id_an
                   LEFT JOIN boost b ON a.id_an = b.id_an
-                   WHERE f.$key = $id;";
+                   WHERE f.$key = $id
+                   ORDER BY a.date_cr DESC
+                   ;";
 
             $result = $this->conn->query($sql);
         } catch (Exception $e) {
@@ -745,15 +766,12 @@ class Models
         return [];
     }
 
-    public function Searchannonce($word)
+    public function Searchannonce($word, $page = 1, $perPage = 30)
     {
-        if (isset($this->hidden_column[$this->tablename])) {
-            $columns = $this->hidden_column[$this->tablename];
-        } else {
-            $columns = '*';
-        }
-        $searchableColumns = ['nom_an', 'categorie_an', 'type_fete', 'ville_an', 'adresse_an', 'tel_an', 'detail_an'];
-        // 
+        //
+        $searchableColumns = ['nom_an', 'categorie_an', 'type_fete', 'ville_an', 'adresse_an'];
+        $offset = ($page - 1) * $perPage;
+        //
         $whereClause = [];
         foreach ($searchableColumns as $column) {
             $whereClause[] = "$column LIKE ?";
@@ -763,15 +781,26 @@ class Models
         $sql = "SELECT a.*, b.type_b
         FROM annonce a
         LEFT JOIN (
-         SELECT id_an, type_b
-        FROM (
-        SELECT id_an, type_b, 
-               ROW_NUMBER() OVER (PARTITION BY id_an ORDER BY date_cr_b DESC) AS rn
-        FROM boost ) b_latest
-        WHERE rn = 1
+            SELECT id_an, type_b
+            FROM (
+                SELECT id_an, type_b, 
+                       ROW_NUMBER() OVER (PARTITION BY id_an ORDER BY date_cr_b DESC) AS rn
+                FROM boost 
+            ) b_latest
+            WHERE rn = 1
         ) b ON a.id_an = b.id_an
-        WHERE ($whereClause) AND   a.etat_an = 'active'
-        ORDER BY a.jaime DESC;";
+        WHERE ($whereClause) AND a.etat_an = 'active'
+        ORDER BY 
+                CASE 
+                WHEN b.type_b = 'vip' THEN 1 
+                WHEN b.type_b = 'gold' THEN 2 
+                ELSE 3 
+            END,
+            a.date_cr DESC, 
+            a.jaime DESC
+             LIMIT $perPage OFFSET $offset;
+        ";
+
 
         $stmt = $this->conn->prepare($sql);
         //
@@ -789,21 +818,46 @@ class Models
         // Fetch the results
         $result = $stmt->get_result();
         $data = $result->fetch_all(MYSQLI_ASSOC);
-        // Check if data was found
-        if (empty($data)) {
-            throw new Exception('No data found for the search term: ' . $word);
+        //
+        $countSql = "SELECT COUNT(*) as total FROM annonce a 
+        WHERE ($whereClause) AND a.etat_an = 'active'";
+
+        $countStmt = $this->conn->prepare($countSql);
+        if (!$countStmt) {
+            throw new Exception("SQL Error: " . $this->conn->error);
         }
-        return $data;
+
+        $countStmt->bind_param($types, ...array_fill(0, count($searchableColumns), $searchWord));
+
+        if (!$countStmt->execute()) {
+            throw new Exception("Execution Error: " . $countStmt->error);
+        }
+
+        $countResult = $countStmt->get_result();
+        $totalRows = $countResult->fetch_assoc()['total'] ?? 0;
+        $totalPages = ceil($totalRows / $perPage);
+        // 
+        return [
+            'paginate' => [
+                'current_page' => (int)$page,
+                'per_page' => $perPage,
+                'total_rows' => $totalRows,
+                'total_pages' => $totalPages,
+            ],
+            'data' => $data
+        ];
     }
 
-    public function whereVip($conditions = [], $options = [])
+    public function whereVip($conditions = [], $page = 1, $perPage = 30)
     {
         try {
             $columns = implode(', ', $this->Columns['annonce']);
+            $offset = ($page - 1) * $perPage;
             $placeholders = [];
             $values = [];
             $types = "";
-            //
+
+            // Construct WHERE clause based on conditions
             foreach ($conditions as $condition) {
                 [$column, $operator, $value] = $condition;
 
@@ -814,40 +868,46 @@ class Models
                     $types .= str_repeat('s', count($value));
                 } else {
                     $placeholders[] = "$column $operator ?";
-                    $values[] = $operator === 'LIKE' ? "%{$value}%" : $value;
+                    $values[] = ($operator === 'LIKE') ? "%{$value}%" : $value;
                     $types .= is_int($value) ? "i" : "s";
                 }
             }
-            //
-            $sql = "SELECT a.*, latest_boost.type_b
-            FROM annonce a 
+
+            // Base query with VIP filtering
+            $baseQuery = "FROM annonce a 
             JOIN (
-            SELECT 
-               b.*,ROW_NUMBER() OVER (PARTITION BY id_an ORDER BY date_cr_b DESC) AS rn
-            FROM boost b
-            WHERE b.type_b = 'vip' AND b.etat_b = 'active')
-            latest_boost ON a.id_an = latest_boost.id_an AND latest_boost.rn = 1";
+                SELECT 
+                    b.*, ROW_NUMBER() OVER (PARTITION BY id_an ORDER BY date_cr_b DESC) AS rn
+                FROM boost b
+                WHERE b.type_b = 'vip' AND b.etat_b = 'active'
+            ) latest_boost ON a.id_an = latest_boost.id_an AND latest_boost.rn = 1
+            WHERE a.etat_an = 'active'";
 
-            if ($placeholders) {
-                $sql .= " WHERE " . implode(" AND ", $placeholders);
+            // Append WHERE conditions if any
+            if (!empty($placeholders)) {
+                $baseQuery .= " AND " . implode(" AND ", $placeholders);
             }
-            $sql .= " AND a.etat_an = 'active'";
 
-            // Ordering
-            if (!empty($options['orderBy'])) {
-                $direction = strtoupper($options['orderDirection'] ?? 'ASC');
-                $sql .= " ORDER BY " . $this->conn->real_escape_string($options['orderBy']) . " $direction";
-            } else {
-                $sql .= " ORDER BY a.jaime DESC";
+            // Count total records for pagination
+            $countSql = "SELECT COUNT(*) as total $baseQuery";
+            $stmt = $this->conn->prepare($countSql);
+            if ($values) {
+                $stmt->bind_param($types, ...$values);
             }
-            // Pagination optimization
-            if (isset($options['page'], $options['perPage'])) {
-                $offset = ((int)$options['page'] - 1) * (int)$options['perPage'];
-                $sql .= " LIMIT ? OFFSET ?";
-                $values[] = (int)$options['perPage'];
-                $values[] = $offset;
-                $types .= "ii";
-            }
+            $stmt->execute();
+            $countResult = $stmt->get_result();
+            $totalRows = $countResult->fetch_assoc()['total'];
+            $totalPages = ceil($totalRows / $perPage);
+
+            // Fetch paginated results
+            $sql = "SELECT a.*, latest_boost.type_b $baseQuery
+            ORDER BY a.date_cr DESC, a.jaime DESC
+            LIMIT ? OFFSET ?";
+
+            // Bind pagination values
+            $values[] = $perPage;
+            $values[] = $offset;
+            $types .= "ii";
 
             $stmt = $this->conn->prepare($sql);
             if (!$stmt) {
@@ -860,24 +920,34 @@ class Models
 
             $stmt->execute();
             $result = $stmt->get_result();
-
             $data = $result->fetch_all(MYSQLI_ASSOC);
 
-
-            return $data;
+            // Return data with pagination info
+            return [
+                'paginate' => [
+                    'current_page' => (int) $page,
+                    'per_page' => $perPage,
+                    'total_rows' => $totalRows,
+                    'total_pages' => $totalPages,
+                ],
+                'data' => $data
+            ];
+            //
         } catch (Exception $e) {
-            throw new Exception("Error in where query: " . $e->getMessage());
+            throw new Exception("Error in whereVip query: " . $e->getMessage());
         }
     }
 
-    public function whereGold($conditions = [], $options = [])
+    public function whereGold($conditions = [], $page = 1, $perPage = 30)
     {
         try {
             $columns = implode(', ', $this->Columns['annonce']);
+            $offset = ($page - 1) * $perPage;
             $placeholders = [];
             $values = [];
             $types = "";
-            //
+
+            // Construct WHERE clause based on conditions
             foreach ($conditions as $condition) {
                 [$column, $operator, $value] = $condition;
 
@@ -888,39 +958,46 @@ class Models
                     $types .= str_repeat('s', count($value));
                 } else {
                     $placeholders[] = "$column $operator ?";
-                    $values[] = $operator === 'LIKE' ? "%{$value}%" : $value;
+                    $values[] = ($operator === 'LIKE') ? "%{$value}%" : $value;
                     $types .= is_int($value) ? "i" : "s";
                 }
             }
-            //
-            $sql = "SELECT a.*, latest_boost.type_b
-            FROM annonce a 
-            JOIN (
-            SELECT 
-               b.*,ROW_NUMBER() OVER (PARTITION BY id_an ORDER BY date_cr_b DESC) AS rn
-            FROM boost b
-            WHERE b.type_b = 'gold' AND b.etat_b = 'active')
-            latest_boost ON a.id_an = latest_boost.id_an AND latest_boost.rn = 1";
 
-            if ($placeholders) {
-                $sql .= " WHERE " . implode(" AND ", $placeholders);
+            // Base query with VIP filtering
+            $baseQuery = "FROM annonce a 
+                JOIN (
+                    SELECT 
+                        b.*, ROW_NUMBER() OVER (PARTITION BY id_an ORDER BY date_cr_b DESC) AS rn
+                    FROM boost b
+                    WHERE b.type_b = 'gold' AND b.etat_b = 'active'
+                ) latest_boost ON a.id_an = latest_boost.id_an AND latest_boost.rn = 1
+                WHERE a.etat_an = 'active'";
+
+            // Append WHERE conditions if any
+            if (!empty($placeholders)) {
+                $baseQuery .= " AND " . implode(" AND ", $placeholders);
             }
-            $sql .= " AND a.etat_an = 'active'";
-            // Ordering
-            if (!empty($options['orderBy'])) {
-                $direction = strtoupper($options['orderDirection'] ?? 'ASC');
-                $sql .= " ORDER BY " . $this->conn->real_escape_string($options['orderBy']) . " $direction";
-            } else {
-                $sql .= " ORDER BY a.jaime DESC";
+
+            // Count total records for pagination
+            $countSql = "SELECT COUNT(*) as total $baseQuery";
+            $stmt = $this->conn->prepare($countSql);
+            if ($values) {
+                $stmt->bind_param($types, ...$values);
             }
-            // Pagination optimization
-            if (isset($options['page'], $options['perPage'])) {
-                $offset = ((int)$options['page'] - 1) * (int)$options['perPage'];
-                $sql .= " LIMIT ? OFFSET ?";
-                $values[] = (int)$options['perPage'];
-                $values[] = $offset;
-                $types .= "ii";
-            }
+            $stmt->execute();
+            $countResult = $stmt->get_result();
+            $totalRows = $countResult->fetch_assoc()['total'];
+            $totalPages = ceil($totalRows / $perPage);
+
+            // Fetch paginated results
+            $sql = "SELECT a.*, latest_boost.type_b $baseQuery
+                ORDER BY a.date_cr DESC, a.jaime DESC
+                LIMIT ? OFFSET ?";
+
+            // Bind pagination values
+            $values[] = $perPage;
+            $values[] = $offset;
+            $types .= "ii";
 
             $stmt = $this->conn->prepare($sql);
             if (!$stmt) {
@@ -933,13 +1010,21 @@ class Models
 
             $stmt->execute();
             $result = $stmt->get_result();
-
             $data = $result->fetch_all(MYSQLI_ASSOC);
 
-
-            return $data;
+            // Return data with pagination info
+            return [
+                'paginate' => [
+                    'current_page' => (int)$page,
+                    'per_page' => $perPage,
+                    'total_rows' => $totalRows,
+                    'total_pages' => $totalPages,
+                ],
+                'data' => $data
+            ];
+            //
         } catch (Exception $e) {
-            throw new Exception("Error in where query: " . $e->getMessage());
+            throw new Exception("Error in whereVip query: " . $e->getMessage());
         }
     }
     // get resarvation for client so he know his planning (annonce,resarvation,membre)
@@ -1130,7 +1215,22 @@ class Models
             }
         } catch (Exception $e) {
             http_response_code(500);
-            throw new Exception("Annonce not found or visites not updated.");
+            throw new Exception(" visites not updated.");
+        }
+    }
+
+    public function findfavoris($id, $key)
+    {
+        try {
+            $sql = "SELECT $key FROM favoris WHERE $key = ?";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bind_param("i", $id); // Assuming $id is an integer, change accordingly
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            return $result->fetch_all(MYSQLI_ASSOC);
+        } catch (Exception $e) {
+            return [];
         }
     }
 }

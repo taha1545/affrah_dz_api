@@ -150,7 +150,6 @@ CREATE TABLE `reservation` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 
--
 ALTER TABLE `admin`
   ADD PRIMARY KEY (`id_a`),
   ADD UNIQUE KEY `email_a` (`email_a`),

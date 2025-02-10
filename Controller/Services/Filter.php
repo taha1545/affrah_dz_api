@@ -19,6 +19,7 @@ class Filter
             // Only include specific mappings
             $query = [
                 'nom_an'   => $query['name'] ?? null,
+                'type_fete'   => $query['eventType'] ?? null,
                 'tarif_an' => $query['price'] ?? null,
                 'type_b'   => $query['type'] ?? null,
                 'categorie_an' => $query['category'] ?? null,

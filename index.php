@@ -7,12 +7,10 @@ ob_start();
 header("Access-Control-Allow-Origin: * ");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
-
 // Use autoloading for controllers 
 spl_autoload_register(function ($class) {
   include 'Controller/' . $class . '.php';
 });
-
 // Initialize controllers (lazy loading can be implemented if needed)
 $clientController = new ClientController();
 $membreController = new MembreController();
@@ -57,7 +55,6 @@ if ($method === 'POST') {
   $rawInput = file_get_contents('php://input');
   $data = json_decode($rawInput, true) ?? [];
 }
-
 // routing
 $router = [
   'GET' => [
@@ -77,12 +74,13 @@ $router = [
     //
     'annonce' => fn() => $annonceController->index($query),
     'myannonce' => fn() => $annonceController->myannonce(),
+    'annoncebymembre/(\d+)' => fn($id) => $annonceController->annoncebymembre($id),
     'annoncefav' => fn() => $annonceController->myfavoris(),
     'annonce/categorie' => fn() => $annonceController->showcategorie(),
     'annonce/vip' => fn() => $annonceController->showvip($query),
     'annonce/gold' => fn() => $annonceController->showgold($query),
     'annonce/(\d+)' => fn($id) => $annonceController->show($id),
-    'annonce/search/(.+)' => fn($word) => $annonceController->search(urldecode($word)),
+    'annonce/search/(.+)' => fn($word) => $annonceController->search(urldecode($word),$query),
     'annonce/visite/(\d+)' => fn($id) => $annonceController->visite($id),
     //
     'favoris' => fn() => $favorisController->index(),
@@ -96,6 +94,7 @@ $router = [
     //
     'images' => fn() => $imagesController->index(),
     'images/(\d+)' => fn($id) => $imagesController->show($id),
+    //
   ],
   'POST' => [
     'client' => fn() => $clientController->create($data),
@@ -139,7 +138,6 @@ $router = [
     'images/(\d+)' => fn($id) => $imagesController->delete($id),
   ],
 ];
-
 // Match route 
 $matched = false;
 foreach ($router[$method] as $route => $action) {
