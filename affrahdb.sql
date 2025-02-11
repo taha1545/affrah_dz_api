@@ -149,6 +149,9 @@ CREATE TABLE `reservation` (
   `id_c` int DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+ALTER TABLE membre ADD COLUMN fcm_token VARCHAR(255) NULL;
+ALTER TABLE client ADD COLUMN fcm_token VARCHAR(255) NULL;
+
 
 ALTER TABLE `admin`
   ADD PRIMARY KEY (`id_a`),

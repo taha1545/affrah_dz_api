@@ -236,6 +236,7 @@ class Resource
             'id_a' =>  1,
             'signale' =>  "non",
             'id_mo' => 1,
+            'fcm_token' =>$data['fcm'] ?? null,
             'photo_m' => file_get_contents($data['image']['tmp_name'])
         ];
     }
@@ -356,7 +357,8 @@ class Resource
             'id_a' => $data['idAdmin'] ?? null,
             'signale' => $data['banned'] ?? null,
             'id_mo' => $data['idModerateur'] ?? null,
-            'photo_m' => $data['image'] ?? null
+            'photo_m' => $data['image'] ?? null,
+            'fcm_token' => $data['fcm'] ?? null
         ];
 
         return array_filter($newdata, fn($value) => $value !== null);

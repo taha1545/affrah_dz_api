@@ -197,6 +197,9 @@ class MembreController  extends Controller
       if (password_verify($data['password'], $user['mdp_m'])) {
         //
         $auth = new Auth();
+        if (isset($data['fcm'])) {
+          $this->membre->update($user['id_m'], ['fcm_token' => $data['fcm']], 'id_m');
+        }
         return [
           'status' => 'success',
           'token' => $auth->generateToken($user['id_m'], 'membre')
