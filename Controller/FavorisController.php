@@ -6,8 +6,8 @@ require_once 'Services/Validator.php';
 
 class FavorisController extends Controller
 {
-
-
+   //favoris controller 
+ 
   public function index()
   {
     try {

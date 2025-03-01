@@ -7,12 +7,25 @@ require_once 'Services/UploadVideo.php';
 require_once 'Services/Filter.php';
 require_once 'Services/auth.php';
 
+// index = fetch all  annonces
+// show = fetch annonce
+//create and update and delete annonce
+// showcategorie = show all categorie that existe 
+//showvip = show annonce that have gold boost
+// show gold = show annonces that have silver boost
+//visite = like show but it update visisites (seen)
+// like = like annonce and dislike 
+//myannonce =  show all my annonce
+// myfavoris = show all my favoris annonce
+// search  =  search in annonce
+// annoncebymembre =  show all annonce from this membre 
+// allowed action is array of each categoire and allowed action for client to do (resarve or contact)
+
+
 class AnnonceController  extends Controller
 {
-  // cache 
-  //queue 
-  //update image 
-  //connection in create
+
+
   private  $allowedAction = [
     'Costumes' => ['res', 'cont'],
     'Automobiles' => ['res'],
@@ -38,7 +51,6 @@ class AnnonceController  extends Controller
   public function index($query = null)
   {
     try {
-      //
       $data = $query ? $this->annonce->whereannonce(Filter::Filterquery($query, 'annonce'))
         : $this->annonce->allannonce();
       //
@@ -48,7 +60,6 @@ class AnnonceController  extends Controller
         'data' => Collection::returnAnnounces($data)
       ];
     } catch (Exception $e) {
-      //
       http_response_code(500);
       return [
         'status' => 'error',
@@ -62,21 +73,16 @@ class AnnonceController  extends Controller
     try {
       // find annonce
       $data = $this->annonce->findannonce($id);
-      //actions
-      if (array_key_exists($data['categorie_an'], $this->allowedAction)) {
-        $action = $this->allowedAction[$data['categorie_an']];
-      } else {
-        $action = ['res', 'cont'];
-      }
-      //
+      //actions 
+      $action = $this->allowedAction[$data['categorie_an']] ?? ['res', 'cont'];
+      // return responce
       http_response_code(200);
       return [
         'status' => 'success',
         'message' => 'Data retrieved successfully',
-        'data' => Resource::ReturnAnnonce($data) + ['actions' => $action] + ['allowed' => false, 'liked' => false]
+        'data' => Resource::ReturnAnnonce($data) + ['actions' => $action, 'allowed' => false, 'liked' => false]
       ];
-    } catch (Exception $e) {
-      // 
+    } catch (Exception) {
       http_response_code(500);
       return [
         'status' => 'error',
@@ -85,43 +91,43 @@ class AnnonceController  extends Controller
     }
   }
 
-
   public function create($data)
   {
     try {
-      //authentication role 
+      //auth to get data and check role membre
       $auth = new Auth();
       $decode = $auth->checkRole(['membre']);
-      //validation of data and files
+
+      //validation 
       $valid = new Validator();
       $data = $valid->validateData($data, 'annonce');
-      //
       $valid::ValideImage($data['image']);
-      //
       foreach ($data['images'] as $file) {
         $valid::ValideImage($file);
       }
       if (isset($data['video'])) {
         $valid::ValideVideo(video: $data['video']);
       }
+
       //create image and video
       $data['image'] = UploadVideo::CreateImage($data['image']);
       if (isset($data['video'])) {
         $data['video'] = UploadVideo::CreateVideo($data['video']);
       }
+
       //resource
       $oldimages = $data['images'];
       $data['idMember'] = $decode['sub'];
       $data = Resource::GetAnnonce($data);
+
       //create annonce
       $id_an = $this->annonce->create($data);
 
-      //create images
+      //create images 
       foreach ($oldimages as $file) {
         $images[] = Resource::GetAlotImages(UploadVideo::CreateImage($file), $id_an);
       }
       $this->images->bulkcreate($images);
-
 
       //return true 
       http_response_code(201);
@@ -129,7 +135,6 @@ class AnnonceController  extends Controller
         'status' => 'success',
         'message' => 'Data Created successfully',
       ];
-      //
     } catch (Exception $e) {
       $errorms = json_decode($e->getMessage()) ?? $e->getMessage();
       return [
@@ -139,28 +144,27 @@ class AnnonceController  extends Controller
     }
   }
 
-
   public function update($id, $data)
   {
     try {
       //authentication role 
       $auth = new Auth();
       $user = $auth->checkRole(['membre']);
+      // find annonce
       $ann = $this->annonce->find($id, 'id_an');
       //authorize
       if ($user['sub'] !== $ann['id_m']) {
         throw new Exception('this membre is not allowed to edite');
       }
-      //
+      // validation
       $valide = new Validator();
       $data = $valide->validateData($data, 'updateannonce');
       // resource 
       $data = Resource::UpdateAnnonce($data);
       // Update operation
-      if (empty($data)) {
-        throw new Exception('empty data given');
+      if (isset($data)) {
+        $this->annonce->update($id, $data, 'id_an');
       }
-      $this->annonce->update($id, $data, 'id_an');
       // Return success response
       http_response_code(200);
       return [
@@ -182,19 +186,20 @@ class AnnonceController  extends Controller
       //authentication role 
       $auth = new Auth();
       $user = $auth->checkRole(['membre']);
+      // find annonce
       $ann = $this->annonce->find($id, 'id_an');
       //authorize
       if ($user['sub'] !== $ann['id_m']) {
         throw new Exception('this membre is not allowed to edite');
       }
-      //
+      // delete annonce
       $this->annonce->delete($id, 'id_an');
       // Return success response
       return [
         'status' => 'success',
         'message' => 'Data deleted successfully'
       ];
-    } catch (Exception  $e) {
+    } catch (Exception) {
       // Handle error
       http_response_code(500);
       return [
@@ -230,35 +235,32 @@ class AnnonceController  extends Controller
         'Burnous et chevaux' => ['image' => '/catg/Burnousetchevaux.jpg', 'ar' => 'برنـوس و أحصـنة'],
         'Pas de groupe de photographie' => ['image' => '/catg/Pasdegroupedephotographie.jpg', 'ar' => 'فرقـة ممنـوع التصـويـر'],
       ];
-
       // Fetch all categories from the database
       $data = $this->annonce->allcategorie();
-
       // Initialize categories with zero count
       $categories = [];
       foreach ($catg as $name => $info) {
         $categories[$name] = [
           'name' => $name,
-          'name_ar' => $info['ar'], // Arabic name field
+          'name_ar' => $info['ar'],
           'number' => 0,
           'image' => $info['image'],
         ];
       }
-
       // Update counts for categories found in the database
       foreach ($data as $item) {
         if (isset($categories[$item['categorie_an']])) {
           $categories[$item['categorie_an']]['number'] = (int) $item['count'];
         }
       }
-
+      //
       return [
         'status' => 'success',
         'message' => 'Data retrieved successfully',
         'data' => array_values($categories),
       ];
+      //
     } catch (Exception $e) {
-      // Handle exceptions
       http_response_code(500);
       return [
         'status' => 'error',
@@ -267,19 +269,16 @@ class AnnonceController  extends Controller
     }
   }
 
-
   public function showvip($query = null)
   {
-    if (isset($query['page'])) {
-      $page = $query['page'];
-      unset($query['page']);
-    } else {
-      $page = 1;
-    }
+    $page = $query['page'] ?? 1;
+    unset($query['page']);
+    //
     try {
-      //
+      // get gold
       $info = $query ? $this->annonce->whereVip(Filter::Filterquery($query, 'annonce'), $page)
         : $this->annonce->allvip($page);
+      // resource
       $data = $info['data'];
       $paginate = $info['paginate'];
       //
@@ -290,7 +289,6 @@ class AnnonceController  extends Controller
         'info' => $paginate
       ];
     } catch (Exception $e) {
-      //
       http_response_code(500);
       return [
         'status' => 'error',
@@ -301,16 +299,14 @@ class AnnonceController  extends Controller
 
   public function showgold($query = null)
   {
-    if (isset($query['page'])) {
-      $page = $query['page'];
-      unset($query['page']);
-    } else {
-      $page = 1;
-    }
+    $page = $query['page'] ?? 1;
+    unset($query['page']);
+    //
     try {
-      //
+      // get silver annonce
       $info = $query ? $this->annonce->whereGold(Filter::Filterquery($query, 'annonce'), $page)
         : $this->annonce->allboost($page);
+      //
       $data = $info['data'];
       $paginate = $info['paginate'];
       //
@@ -321,7 +317,6 @@ class AnnonceController  extends Controller
         'info' => $paginate
       ];
     } catch (Exception $e) {
-      //
       http_response_code(500);
       return [
         'status' => 'error',
@@ -336,12 +331,16 @@ class AnnonceController  extends Controller
       // Authentication
       $auth = new Auth();
       $user = $auth->authMiddleware();
+      $userId = $user['sub'];
+      $userRole = $user['role'];
       // Find annonce
       $data = $this->annonce->findannonce($id);
-      //
-      session_start();
+      // start session   
+      if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+      }
       $sessionKey = "visited_{$id}_{$user['sub']}";
-      //
+      // test session
       if (!isset($_SESSION[$sessionKey])) {
         $this->annonce->updateVisite($id);
         $_SESSION[$sessionKey] = true;
@@ -349,19 +348,12 @@ class AnnonceController  extends Controller
       // Authorization
       $allow = (bool) ($data['id_m'] == $user['sub']) && ($user['role'] == 'membre');
       //actions
-      if (array_key_exists($data['categorie_an'], $this->allowedAction)) {
-        $action = $this->allowedAction[$data['categorie_an']];
-      } else {
-        $action = ['res', 'cont'];
-      }
+      $action = $this->allowedAction[$data['categorie_an']] ?? ['res', 'cont'];
       //liked 
-      if ($user['role'] == 'client') {
-        $favorisList = $this->favoris->findfavoris($user['sub'], 'id_c');
-      } else {
-        $favorisList = $this->favoris->findfavoris($user['sub'], 'id_m');
-      }
-      $favorisValues = array_column($favorisList, 'id_c');
-      $liked = in_array($user['sub'], $favorisValues);
+      $favorisKey = $userRole === 'client' ? 'id_c' : 'id_m';
+      $favorisList = $this->favoris->findfavoris($userId, $favorisKey);
+      $favorisValues = array_column($favorisList, 'id_an');
+      $liked = in_array($id, $favorisValues);
       // Return response
       http_response_code(200);
       return [
@@ -382,41 +374,23 @@ class AnnonceController  extends Controller
   public function like($id)
   {
     try {
-      //authnetication
+      // Authentication
       $auth = new Auth();
       $user = $auth->authMiddleware();
-      // create new favoris  or delete 
-      if ($user['role'] == 'client') {
-        try {
-          $this->favoris->delete($user['sub'], 'id_c');
-        } catch (Exception) {
-          $this->favoris->create([
-            'id_c' => $user['sub'],
-            'id_an' => $id
-          ]);
-        }
+      $userId = $user['sub'];
+      $column = ($user['role'] == 'client') ? 'id_c' : 'id_m';
+      // Check if the user already liked the annonce
+      if ($this->favoris->exists_like($userId, $column, $id)) {
+        $this->favoris->delete_like($userId, $column, $id);
       } else {
-        try {
-          $this->favoris->delete($user['sub'], 'id_m');
-        } catch (Exception) {
-          $this->favoris->create([
-            'id_m' => $user['sub'],
-            'id_an' => $id
-          ]);
-        }
+        $this->favoris->create([
+          $column => $userId,
+          'id_an' => $id
+        ]);
       }
-      // update likes 
-      try {
-        $annonce = $this->favoris->findall($id, 'id_an');
-        $this->annonce->update($id, [
-          'jaime' => count($annonce),
-        ], 'id_an');
-      } catch (Exception) {
-        $this->annonce->update($id, [
-          'jaime' => 0,
-        ], 'id_an');
-      }
-      //return 
+      // Update like count
+      $this->favoris->updateLikeCount($id);
+      // Return response
       http_response_code(200);
       return [
         'status' => 'success',
@@ -426,10 +400,11 @@ class AnnonceController  extends Controller
       http_response_code(500);
       return [
         'status' => 'error',
-        'message' => "Can't Access This Resource"
+        'message' => "An error occurred while updating like."
       ];
     }
   }
+
 
   public function myannonce()
   {
@@ -483,15 +458,12 @@ class AnnonceController  extends Controller
 
   public function search($word, $query = null)
   {
-    if (isset($query['page'])) {
-      $page = $query['page'];
-      unset($query['page']);
-    } else {
-      $page = 1;
-    }
+    $page = $query['page'] ?? 1;
+    unset($query['page']);
+    //
     try {
-      //
       $info = $this->annonce->Searchannonce($word, $page);
+      //
       $data = $info['data'];
       $paginate = $info['paginate'];
       //

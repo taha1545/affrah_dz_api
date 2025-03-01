@@ -1,5 +1,7 @@
 <?php
 
+// to get query than make it in where for filter data in db
+
 class Filter
 {
     protected static $operation = [

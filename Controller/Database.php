@@ -2,6 +2,8 @@
 
 use Dotenv\Dotenv;
 
+// create connection with db using .env info 
+
 class Database
 {
     private static $conn = null;

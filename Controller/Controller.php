@@ -3,6 +3,8 @@
 require_once 'Services/Models.php';
 require_once 'Database.php';
 
+// link connection with db and models
+
 
 class Controller
 {

@@ -8,7 +8,7 @@ require_once 'Services/auth.php';
 class BoostController extends Controller
 {
 
-  // more validation and logic  
+
 
   public function index()
   {
@@ -54,8 +54,8 @@ class BoostController extends Controller
   {
     try {
       // auth
-       $auth= new Auth();
-       $user=$auth->checkRole(['membre']);
+      $auth = new Auth();
+      $user = $auth->checkRole(['membre']);
       //validation
       $valid = new Validator();
       $data = $valid->validateData($data, 'boost');
@@ -63,7 +63,7 @@ class BoostController extends Controller
       $valid->ValideImage($data['image']);
       //resource
       $data = Resource::GetBoost($data);
-      $data['id_m']=$user['sub'];
+      $data['id_m'] = $user['sub'];
       //create  
       $this->boost->create($data);
       //return true 

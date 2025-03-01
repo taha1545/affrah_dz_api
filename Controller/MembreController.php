@@ -4,11 +4,17 @@ require_once 'Services/Collection.php';
 require_once 'Services/Resource.php';
 require_once 'Services/Validator.php';
 
+// index = all user fetch
+// show = one user fetch 
+// create = for signup 
+// update to update user data
+// show image to get image for membre
+//login = login user 
+// otp and forgetpassword = for forget password logic it send mail to membre for otp check 
+// updateimage = to update image for membre  
+
 class MembreController  extends Controller
 {
-
-  //queue
-  // update image
 
   public function index()
   {
@@ -29,7 +35,6 @@ class MembreController  extends Controller
     }
   }
 
-
   public function show($id)
   {
     try {
@@ -49,7 +54,7 @@ class MembreController  extends Controller
     }
   }
 
-
+  // signup membre 
   public function create($data)
   {
     try {
@@ -60,19 +65,18 @@ class MembreController  extends Controller
       $valid->ValideImage($data['image']);
       //resource
       $data = Resource::GetMembre($data);
-      //create  
+      //create  membre 
       $id = $this->membre->create($data);
-      //generate token 
-      $auth = new Auth();
-      $token = $auth->generateToken($id, 'membre');
-      //
+      // return secces for signup 
       return [
         'status' => 'success',
-        'message' => 'data created success',
-        'token' => $token,
+        'message' => 'successfully created. wait for your request to be submitted',
       ];
     } catch (Exception $e) {
-      // error message
+      // if empty message docode than it means its server error not 421 
+      if (empty(json_decode($e->getMessage()))) {
+        http_response_code(500);
+      }
       return [
         'status' => 'error',
         'message' => json_decode($e->getMessage()) ?? $e->getMessage(),
@@ -80,16 +84,15 @@ class MembreController  extends Controller
     }
   }
 
-
   public function update($id, $data)
   {
     try {
       //auth
       $auth = new Auth();
       $user = $auth->checkRole(['membre']);
-      //
+      // find membre in db
       $membre = $this->membre->find($id, 'id_m');
-      //
+      // authorazation
       if ($membre['id_m'] !== $user['sub']) {
         throw new Exception('u cant update this resource');
       }
@@ -101,8 +104,6 @@ class MembreController  extends Controller
       // Update operation
       if ($data !== []) {
         $this->membre->update($id, $data, 'id_m');
-      } else {
-        throw new Exception('no data to update');
       }
       // Return success response
       return [
@@ -126,13 +127,13 @@ class MembreController  extends Controller
       //auth
       $auth = new Auth();
       $user = $auth->checkRole(['membre']);
-      //
+      // find
       $membre = $this->membre->find($id, 'id_m');
-      //
+      //authorize
       if ($membre['id_m'] !== $user['sub']) {
         throw new Exception('u cant delete this resource');
       }
-      // block user
+      // delete user
       $this->membre->update($id, ['signale' => 'oui'], 'id_m');
       // Return success response
       return [
@@ -153,119 +154,113 @@ class MembreController  extends Controller
   public function showImage($id)
   {
     $image = $this->membre->findImage($id, 'id_m');
-    //
+
     if ($image && isset($image['photo_m'])) {
-      // Retrieve the image data
       $imageData = $image['photo_m'];
-      // Validate the MIME type of the image
+
       $finfo = finfo_open(FILEINFO_MIME_TYPE);
       $mimeType = finfo_buffer($finfo, $imageData);
       finfo_close($finfo);
-      // Check if the MIME type is valid (JPEG or PNG)
-      if (in_array($mimeType, ['image/jpeg', 'image/jpg', 'image/png'])) {
-        // Set the appropriate content type for the image
+
+      $allowedTypes = [
+        'image/jpeg',
+        'image/jpg',
+        'image/png',
+        'image/gif',
+        'image/webp',
+        'image/bmp',
+        'image/tiff',
+        'image/svg+xml'
+      ];
+
+      if (in_array($mimeType, $allowedTypes)) {
         header('Content-Type: ' . $mimeType);
-        // Output the image data
         echo $imageData;
-      } else {
-        // Invalid image format
-        http_response_code(415);
-        echo "Invalid image format.";
+        return;
       }
-    } else {
-      // Image not found
-      http_response_code(404);
-      echo "Image not found.";
     }
+
+    $defaultImagePath = './catg/profile.png';
+    header('Content-Type: image/png');
+    readfile($defaultImagePath);
   }
 
-  public function login($data)
+  public function login(array $data)
   {
-    // validation
-    if (empty($data["email"]) || empty($data["password"])) {
-      http_response_code(421);
-      return [
-        'status' => 'error',
-        'message' => 'no email or password provided'
-      ];
+    if ((empty($data["email"]) && empty($data["phone"])) || empty($data["password"])) {
+      http_response_code(400);
+      return ['status' => 'error', 'message' => 'Email/Phone or password is missing'];
     }
-    // generate token and send it
+    //
     try {
-      //
-      $user = $this->membre->find($data['email'], 'email_m');
-      //
-      if (password_verify($data['password'], $user['mdp_m'])) {
-        //
-        $auth = new Auth();
-        if (isset($data['fcm'])) {
-          $this->membre->update($user['id_m'], ['fcm_token' => $data['fcm']], 'id_m');
-        }
-        return [
-          'status' => 'success',
-          'token' => $auth->generateToken($user['id_m'], 'membre')
-        ];
+      if (isset($data['phone'])) {
+        $user = $this->membre->find($data['phone'], 'tel_m');
       } else {
-        http_response_code(400);
-        return [
-          'status' => 'error',
-          'message' => 'password does not match'
-        ];
+        $user = $this->membre->find($data['email'], 'email_m');
       }
       //
+      if (!$user) {
+        http_response_code(404);
+        return ['status' => 'error', 'message' => 'User not found'];
+      }
+      // test for etat 
+      if ($user['etat_m'] !== 'valide') {
+        throw new Exception('Your request is not yet activated. Please try again later.');
+      }
+      //
+      if (!password_verify($data['password'], $user['mdp_m'])) {
+        http_response_code(401);
+        return ['status' => 'error', 'message' => 'Invalid credentials'];
+      }
+      //
+      if (!empty($data['fcm']) && $user['fcm_token'] !== $data['fcm']) {
+        $this->membre->update($user['id_m'], ['fcm_token' => $data['fcm']], 'id_m');
+      }
+      //
+      $auth = new Auth();
+      $token = $auth->generateToken($user['id_m'], 'membre');
+      //
+      http_response_code(200);
+      return ['status' => 'success', 'token' => $token];
     } catch (Exception) {
-      http_response_code(404);
-      return [
-        'status' => 'error',
-        'message' => 'membre not found'
-      ];
+      http_response_code(500);
+      return ['status' => 'error', 'message' => 'Your request is not yet activated. Please try again later.'];
     }
   }
 
-  public function updatepassword($data)
+  public function updatePassword(array $data)
   {
+    if (empty($data['email'])) {
+      http_response_code(400);
+      return ['status' => 'error', 'message' => 'Email is required'];
+    }
+
+    if (empty($data['password']) || strlen($data['password']) < 8) {
+      http_response_code(400);
+      return ['status' => 'error', 'message' => 'Password must be at least 8 characters long'];
+    }
+
     try {
-      // get data 
-      $data = [
-        'email_m' => $data['email'] ?? null,
-        'mdp_m' => $data['password'] ?? null
-      ];
-      // test email
-      if (isset($data['email_m'])) {
-        // password validation 
-        if (isset($data['mdp_m']) && (strlen($data['mdp_m']) >= 8)) {
-          //find user 
-          $data['mdp_m'] = password_hash($data['mdp_m'], PASSWORD_BCRYPT);
-          $this->membre->updatepass($data['email_m'], 'email_m', $data);
-          $userid = $this->membre->find($data['email_m'], 'email_m');
-          // generate token 
-          $auth = new Auth();
-          $token = $auth->generateToken($userid['id_m'], 'membre');
-          return [
-            'status' => 'success',
-            'message' => 'resouce created seccessfly',
-            'token' => $token
-          ];
-        } else {
-          http_response_code(421);
-          return [
-            'status' => 'error',
-            'message' => 'password is required '
-          ];
-        }
-      } else {
-        http_response_code(421);
-        return [
-          'status' => 'error',
-          'message' => 'email is required '
-        ];
+      $user = $this->membre->find($data['email'], 'email_m');
+      if (!$user) {
+        http_response_code(404);
+        return ['status' => 'error', 'message' => 'User not found'];
       }
-    } catch (Exception $e) {
-      // Handle error
-      http_response_code(500);
+
+      $hashedPassword = password_hash($data['password'], PASSWORD_BCRYPT);
+      $this->membre->updatepass($data['email'], 'email_m', ['mdp_m' => $hashedPassword]);
+
+      $auth = new Auth();
+      $token = $auth->generateToken($user['id_m'], 'membre');
+
       return [
-        'status' => 'error',
-        'message' => $e->getMessage()
+        'status' => 'success',
+        'message' => 'Password updated successfully',
+        'token' => $token
       ];
+    } catch (Exception $e) {
+      http_response_code(500);
+      return ['status' => 'error', 'message' => "Can't update password"];
     }
   }
 
@@ -276,17 +271,17 @@ class MembreController  extends Controller
       if (empty($data['email'])) {
         throw new Exception('email is required');
       }
-      // 
+      //  get membre data 
       $email = $data['email'];
       $user = $this->membre->find($email, 'email_m');
       //random number
       $number = rand(10000, 99999);
-      // send 
+      // send  mail to membre 
       $mail = new Mail();
       if (!$mail->sendmail($email, $number)) {
         throw new Exception('message not send to $email');
       }
-      //
+      // return number to front
       return [
         'status' => 'success',
         'message' => 'mail sent seccefly',
@@ -304,21 +299,21 @@ class MembreController  extends Controller
   public function updateimage($id, $data)
   {
     try {
-      //auth
+      //auth to get token data
       $auth = new Auth();
       $user = $auth->checkRole(['membre']);
-      $client = $this->membre->find($id, 'id_m');
+      // find membre
+      $membre = $this->membre->find($id, 'id_m');
       //authorize
-      if ($client['id_m'] !== $user['sub']) {
+      if ($membre['id_m'] !== $user['sub']) {
         throw new Exception('u cant update this resource');
       }
       //validate image
       $valid = new Validator();
       $valid::ValideImage($data['image']);
-      //
+      // update image in db
       $image = $data['image'];
       $this->membre->update($id, ['photo_m' => file_get_contents($data['image']['tmp_name'])], 'id_m');
-
       //return true
       http_response_code(200);
       return [

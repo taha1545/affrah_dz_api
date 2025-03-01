@@ -1,10 +1,15 @@
 <?php
+
+// query sql to get data from db
+
 class Models
 {
     protected $tablename;
 
-    // hidden columns are image column ... long blob 
+
     protected $hidden_column;
+
+    //db photos or  longblob that should not be return it with other data
     protected $hidden_columns = [
         'client' => ['photo_c'],
         'admin' => ['photo_a'],
@@ -15,7 +20,7 @@ class Models
 
     protected $conn;
 
-    // spesific column from each table to fetch
+    // db tables with colums to fetch
     protected $Columns = [
         // CLIENT
         'client' => [
@@ -29,7 +34,8 @@ class Models
             'etat_c',
             'signale',
             'id_a',
-            'id_mo'
+            'id_mo',
+            'fcm_token'
         ],
         // ADMIN
         'admin' => [
@@ -115,7 +121,8 @@ class Models
             'etat_m',
             'id_a',
             'signale',
-            'id_mo'
+            'id_mo',
+            'fcm_token'
         ],
         //images
         'images' => [
@@ -248,17 +255,14 @@ class Models
             http_response_code(500);
             throw new Exception("Failed to execute the update statement.");
         }
-        if ($stmt->affected_rows === 0) {
-            http_response_code(404);
-            throw new Exception("No matching record found to update.");
-        }
+
 
         return $stmt->affected_rows > 0;
     }
 
     public function delete($id, $key)
     {
-        $sql = "DELETE FROM {$this->tablename} WHERE {$key} = ?";
+        $sql = "DELETE FROM {$this->tablename} WHERE {$key} = ?  LIMIT 1";
         $stmt = $this->conn->prepare($sql);
         $stmt->bind_param("i", $id);
 
@@ -291,7 +295,7 @@ class Models
         $result = $stmt->get_result();
         return $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
     }
-    // to get just the image
+
     public function findImage($id, $key)
     {
         //
@@ -388,38 +392,30 @@ class Models
         if (empty($key) || empty($keyname) || empty($data)) {
             throw new Exception("Invalid input parameters for updating record");
         }
-
         // Build placeholders and types for prepared statement
         $placeholders = [];
         $values = [];
         $types = "";
-
         foreach ($data as $column => $value) {
             $placeholders[] = "$column = ?";
             $values[] = $value;
             $types .= is_int($value) ? "i" : "s";
         }
-
         // Append the key for the WHERE clause
         $types .= "s";
         $values[] = $key;
-
         // Prepare the SQL statement
         $sql = "UPDATE {$this->tablename} SET " . implode(", ", $placeholders) . " WHERE {$keyname} = ?";
         $stmt = $this->conn->prepare($sql);
-
         if (!$stmt) {
             throw new Exception("SQL Error: " . $this->conn->error);
         }
-
         // Bind the parameters dynamically
         $stmt->bind_param($types, ...$values);
-
         // Execute the query and handle errors
         if (!$stmt->execute()) {
             throw new Exception("Execution Error: " . $stmt->error);
         }
-
         // Return true if the update was successful
         return $this->conn->insert_id;
     }
@@ -454,7 +450,7 @@ class Models
             $sql = "SELECT a.*, lb.type_b
             FROM annonce a
             LEFT JOIN (
-            SELECT b.id_an, b.type_b, b.date_cr_b
+            SELECT b.id_an, b.type_b, b.date_cr_b 
             FROM (
             SELECT id_an, type_b, date_cr_b,
                ROW_NUMBER() OVER (PARTITION BY id_an ORDER BY date_cr_b DESC) AS rn
@@ -465,8 +461,8 @@ class Models
              WHERE a.id_m = $id
              ORDER BY 
             CASE 
-            WHEN lb.type_b = 'VIP' THEN 1
-            WHEN lb.type_b = 'Gold' THEN 2
+            WHEN lb.type_b = 'gold' THEN 1
+            WHEN lb.type_b = 'silver' THEN 2 
             ELSE 3 END,
             lb.date_cr_b DESC,
             a.jaime DESC;";
@@ -491,7 +487,7 @@ class Models
             // Count total records for pagination
             $countSql = "SELECT COUNT(*) as total FROM annonce a 
                      JOIN boost b ON a.id_an = b.id_an
-                     WHERE b.type_b = 'vip' AND b.etat_b = 'active' AND a.etat_an = 'active'";
+                     WHERE b.type_b = 'gold' AND b.etat_b = 'valide' AND DATE_ADD(b.date_cr_b, INTERVAL b.duree_b DAY) >= NOW()  AND a.etat_an = 'valide'";
             //         
             $countResult = $this->conn->query($countSql);
             $totalRows = $countResult->fetch_assoc()['total'];
@@ -504,9 +500,9 @@ class Models
                         b.*,
                         ROW_NUMBER() OVER (PARTITION BY id_an ORDER BY date_cr_b DESC) AS rn
                     FROM boost b
-                    WHERE b.type_b = 'vip' AND b.etat_b = 'active'
+                    WHERE b.type_b = 'gold' AND b.etat_b = 'valide' AND DATE_ADD(b.date_cr_b, INTERVAL b.duree_b DAY) >= NOW() 
                 ) latest_boost ON a.id_an = latest_boost.id_an AND latest_boost.rn = 1
-                WHERE a.etat_an = 'active'
+                WHERE a.etat_an = 'valide'
                 ORDER BY a.date_cr DESC, a.jaime DESC
                 LIMIT $perPage OFFSET $offset";
             //
@@ -538,7 +534,7 @@ class Models
             // Count total records for pagination
             $countSql = "SELECT COUNT(*) as total FROM annonce a 
                      JOIN boost b ON a.id_an = b.id_an
-                     WHERE b.type_b = 'gold' AND b.etat_b = 'active' AND a.etat_an = 'active'";
+                     WHERE b.type_b = 'silver' AND b.etat_b = 'valide' AND DATE_ADD(b.date_cr_b, INTERVAL b.duree_b DAY) >= NOW() AND a.etat_an = 'valide'";
             //         
             $countResult = $this->conn->query($countSql);
             $totalRows = $countResult->fetch_assoc()['total'];
@@ -551,9 +547,9 @@ class Models
                         b.*,
                         ROW_NUMBER() OVER (PARTITION BY id_an ORDER BY date_cr_b DESC) AS rn
                     FROM boost b
-                    WHERE b.type_b = 'gold' AND b.etat_b = 'active'
-                ) latest_boost ON a.id_an = latest_boost.id_an AND latest_boost.rn = 1
-                WHERE a.etat_an = 'active'
+                    WHERE b.type_b = 'silver' AND b.etat_b = 'valide' AND DATE_ADD(b.date_cr_b, INTERVAL b.duree_b DAY) >= NOW() 
+                ) latest_boost ON a.id_an = latest_boost.id_an AND latest_boost.rn = 1 
+                WHERE a.etat_an = 'valide'
                 ORDER BY a.date_cr DESC, a.jaime DESC
                 LIMIT $perPage OFFSET $offset";
             //
@@ -595,44 +591,60 @@ class Models
         return [];
     }
 
-    public function allannonce()
+    public function allannonce($page = 1, $perPage = 30)
     {
-        // 
-        $columns = implode(', ', $this->Columns['annonce']);
-        // Select the columns
+        $offset = ($page - 1) * $perPage;
         try {
-            $sql = "SELECT a.*, latest_boost.type_b
-            FROM annonce a
-            LEFT JOIN (
-                SELECT b.id_an, b.type_b, b.date_cr_b
-                FROM boost b
-                INNER JOIN (
-                    SELECT id_an, MAX(date_cr_b) AS latest_date
-                    FROM boost
-                    GROUP BY id_an
-                ) latest ON b.id_an = latest.id_an AND b.date_cr_b = latest.latest_date
-            ) latest_boost ON a.id_an = latest_boost.id_an
-            ORDER BY a.jaime DESC;";
-            $result = $this->conn->query($sql);
-        } catch (Exception) {
-            throw new Exception("error fetching");
+            // Count total records for pagination
+            $countSql = "SELECT COUNT(*) as total FROM annonce a 
+                         LEFT JOIN boost b ON a.id_an = b.id_an
+                         WHERE a.etat_an = 'valide'";
+            $countResult = $this->conn->query($countSql);
+            $totalRows = $countResult->fetch_assoc()['total'];
+            $totalPages = ceil($totalRows / $perPage);
+
+            // Fetch paginated results with proper ordering
+            $sql = "SELECT a.*, lb.type_b
+                    FROM annonce a
+                    LEFT JOIN (
+                        SELECT id_an, type_b, date_cr_b
+                        FROM (
+                            SELECT id_an, type_b, date_cr_b,
+                                   ROW_NUMBER() OVER (PARTITION BY id_an ORDER BY date_cr_b DESC) AS rn
+                            FROM boost
+                        ) b
+                        WHERE b.rn = 1
+                    ) lb ON a.id_an = lb.id_an
+                    WHERE a.etat_an = 'valide'
+                    ORDER BY 
+                        CASE 
+                            WHEN lb.type_b = 'gold' THEN 1
+                            WHEN lb.type_b = 'silver' THEN 2 
+                            ELSE 3 
+                        END,
+                        lb.date_cr_b DESC,
+                        a.jaime DESC
+                    LIMIT ? OFFSET ?";
+
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bind_param("ii", $perPage, $offset);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $data = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
+            return  $data;
+        } catch (Exception $e) {
+            throw new Exception("Error fetching data: " . $e->getMessage());
         }
-        // Fetch and return the data
-        if ($result) {
-            $data = $result->fetch_all(MYSQLI_ASSOC);
-            return $data;
-        }
-        return [];
     }
 
-    public function whereannonce($conditions = [], $options = [])
+
+    public function whereannonce($conditions = [], $options = ['page' => 1, 'perPage' => 20])
     {
         try {
-            $columns = implode(', ', $this->Columns['annonce']);
             $placeholders = [];
             $values = [];
             $types = "";
-            //
+
             foreach ($conditions as $condition) {
                 [$column, $operator, $value] = $condition;
 
@@ -647,30 +659,43 @@ class Models
                     $types .= is_int($value) ? "i" : "s";
                 }
             }
-            //
-            $sql = "SELECT a.*, latest_boost.type_b
-            FROM annonce a
-            LEFT JOIN (
-                SELECT b.id_an, b.type_b, b.date_cr_b
-                FROM boost b
-                INNER JOIN (
-                    SELECT id_an, MAX(date_cr_b) AS latest_date
-                    FROM boost
-                    GROUP BY id_an
-                ) latest ON b.id_an = latest.id_an AND b.date_cr_b = latest.latest_date
-            ) latest_boost ON a.id_an = latest_boost.id_an ";
-            //
+
+            // Base SQL query
+            $sql = "SELECT a.*, lb.type_b
+                    FROM annonce a
+                    LEFT JOIN (
+                        SELECT id_an, type_b, date_cr_b
+                        FROM (
+                            SELECT id_an, type_b, date_cr_b,
+                                   ROW_NUMBER() OVER (PARTITION BY id_an ORDER BY date_cr_b DESC) AS rn
+                            FROM boost
+                        ) b
+                        WHERE b.rn = 1
+                    ) lb ON a.id_an = lb.id_an
+                    WHERE a.etat_an = 'valide'";
+
             if ($placeholders) {
-                $sql .= " WHERE " . implode(" AND ", $placeholders);
+                $sql .= " AND " . implode(" AND ", $placeholders);
             }
+
             // Ordering
+            $orderBy = "ORDER BY 
+                            CASE 
+                                WHEN lb.type_b = 'gold' THEN 1
+                                WHEN lb.type_b = 'silver' THEN 2 
+                                ELSE 3 
+                            END,
+                            lb.date_cr_b DESC,
+                            a.jaime DESC";
+
             if (!empty($options['orderBy'])) {
                 $direction = strtoupper($options['orderDirection'] ?? 'ASC');
-                $sql .= " ORDER BY " . $this->conn->real_escape_string($options['orderBy']) . " $direction";
+                $sql .= " ORDER BY " . $this->conn->real_escape_string($options['orderBy']) . " $direction, " . $orderBy;
             } else {
-                $sql .= " ORDER BY a.jaime DESC";
+                $sql .= " " . $orderBy;
             }
-            // Pagination optimization
+
+            // Pagination
             if (isset($options['page'], $options['perPage'])) {
                 $offset = ((int)$options['page'] - 1) * (int)$options['perPage'];
                 $sql .= " LIMIT ? OFFSET ?";
@@ -690,15 +715,14 @@ class Models
 
             $stmt->execute();
             $result = $stmt->get_result();
-
             $data = $result->fetch_all(MYSQLI_ASSOC);
-
 
             return $data;
         } catch (Exception $e) {
             throw new Exception("Error in where query: " . $e->getMessage());
         }
     }
+
     // to create alot of images with one annonce 
     public function bulkcreate(array $data)
     {
@@ -789,11 +813,11 @@ class Models
             ) b_latest
             WHERE rn = 1
         ) b ON a.id_an = b.id_an
-        WHERE ($whereClause) AND a.etat_an = 'active'
+        WHERE ($whereClause) AND a.etat_an = 'valide'
         ORDER BY 
                 CASE 
-                WHEN b.type_b = 'vip' THEN 1 
-                WHEN b.type_b = 'gold' THEN 2 
+                WHEN b.type_b = 'gold' THEN 1 
+                WHEN b.type_b = 'silver' THEN 2 
                 ELSE 3 
             END,
             a.date_cr DESC, 
@@ -820,7 +844,7 @@ class Models
         $data = $result->fetch_all(MYSQLI_ASSOC);
         //
         $countSql = "SELECT COUNT(*) as total FROM annonce a 
-        WHERE ($whereClause) AND a.etat_an = 'active'";
+        WHERE ($whereClause) AND a.etat_an = 'valide'";
 
         $countStmt = $this->conn->prepare($countSql);
         if (!$countStmt) {
@@ -879,9 +903,9 @@ class Models
                 SELECT 
                     b.*, ROW_NUMBER() OVER (PARTITION BY id_an ORDER BY date_cr_b DESC) AS rn
                 FROM boost b
-                WHERE b.type_b = 'vip' AND b.etat_b = 'active'
+                WHERE b.type_b = 'gold' AND b.etat_b = 'valide' AND DATE_ADD(b.date_cr_b, INTERVAL b.duree_b DAY) >= NOW() 
             ) latest_boost ON a.id_an = latest_boost.id_an AND latest_boost.rn = 1
-            WHERE a.etat_an = 'active'";
+            WHERE a.etat_an = 'valide'";
 
             // Append WHERE conditions if any
             if (!empty($placeholders)) {
@@ -934,7 +958,7 @@ class Models
             ];
             //
         } catch (Exception $e) {
-            throw new Exception("Error in whereVip query: " . $e->getMessage());
+            throw new Exception("Error in gold query: " . $e->getMessage());
         }
     }
 
@@ -963,15 +987,15 @@ class Models
                 }
             }
 
-            // Base query with VIP filtering
+            // Base query with hh filtering
             $baseQuery = "FROM annonce a 
                 JOIN (
                     SELECT 
                         b.*, ROW_NUMBER() OVER (PARTITION BY id_an ORDER BY date_cr_b DESC) AS rn
                     FROM boost b
-                    WHERE b.type_b = 'gold' AND b.etat_b = 'active'
+                    WHERE b.type_b = 'silver' AND b.etat_b = 'valide' AND DATE_ADD(b.date_cr_b, INTERVAL b.duree_b DAY) >= NOW() 
                 ) latest_boost ON a.id_an = latest_boost.id_an AND latest_boost.rn = 1
-                WHERE a.etat_an = 'active'";
+                WHERE a.etat_an = 'valide'";
 
             // Append WHERE conditions if any
             if (!empty($placeholders)) {
@@ -1024,7 +1048,7 @@ class Models
             ];
             //
         } catch (Exception $e) {
-            throw new Exception("Error in whereVip query: " . $e->getMessage());
+            throw new Exception("Error in wheregold query: " . $e->getMessage());
         }
     }
     // get resarvation for client so he know his planning (annonce,resarvation,membre)
@@ -1222,9 +1246,9 @@ class Models
     public function findfavoris($id, $key)
     {
         try {
-            $sql = "SELECT $key FROM favoris WHERE $key = ?";
+            $sql = "SELECT id_an FROM favoris WHERE $key = ?";
             $stmt = $this->conn->prepare($sql);
-            $stmt->bind_param("i", $id); // Assuming $id is an integer, change accordingly
+            $stmt->bind_param("i", $id);
             $stmt->execute();
             $result = $stmt->get_result();
 
@@ -1232,5 +1256,164 @@ class Models
         } catch (Exception $e) {
             return [];
         }
+    }
+
+    public function exists_like($userId, $column, $id_an)
+    {
+        try {
+            //
+            $sql = "SELECT 1 FROM favoris WHERE $column = ? AND id_an = ?";
+            //
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bind_param("ss", $userId, $id_an);
+            $stmt->execute();
+            //
+            return (bool) $stmt->fetch();
+            //
+        } catch (Exception) {
+            return false;
+        }
+    }
+
+
+    public function updateLikeCount($id_an)
+    {
+        try {
+            //
+            $sql = "UPDATE annonce 
+        SET jaime = (SELECT COUNT(*) FROM favoris WHERE id_an = ?) 
+        WHERE id_an = ?";
+            //
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bind_param("ss", $id_an, $id_an);
+            $stmt->execute();
+            //
+            return $stmt->affected_rows > 0;
+            //
+        } catch (Exception) {
+            throw new Exception('error occurese while trying update likes');
+        }
+    }
+
+    public function delete_like($id, $key, $id_an)
+    {
+        $sql = "DELETE FROM {$this->tablename} WHERE {$key} = ? AND id_an = ?";
+        $stmt = $this->conn->prepare($sql);
+
+        if (!$stmt) {
+            http_response_code(500);
+            throw new Exception("Failed to prepare the SQL statement for deletion.");
+        }
+
+        $stmt->bind_param("ii", $id, $id_an);
+
+        if (!$stmt->execute()) {
+            http_response_code(500);
+            throw new Exception("Failed to execute the delete statement.");
+        }
+
+        if ($stmt->affected_rows <= 0) {
+            http_response_code(404);
+            throw new Exception("No matching record found to delete.");
+        }
+
+        return true;
+    }
+
+    public function StoreFCM($title, $message, $id, $role)
+    {
+        // Validate role input
+        if (!in_array($role, ['membre', 'client'])) {
+            throw new Exception("Invalid role provided. Must be 'membre' or 'client'.");
+        }
+        // Use correct column name
+        $columnid = ($role == 'client') ? 'id_c' : 'id_m';
+        // Single query to fetch fcm_token and insert into notify
+        $sql = "
+            INSERT INTO notify (title, message, fcm_token)
+            SELECT ?, ?, fcm_token FROM $role WHERE $columnid = ?
+        ";
+        //
+        $stmt = $this->conn->prepare($sql);
+        //
+        if (!$stmt) {
+            http_response_code(500);
+            throw new Exception("Failed to prepare the SQL statement: " . $this->conn->error);
+        }
+        // Bind only the first two parameters (title, message)
+        $stmt->bind_param("ssi", $title, $message, $id);
+        //
+        if (!$stmt->execute()) {
+            http_response_code(500);
+            throw new Exception("Failed to execute the SQL statement: " . $stmt->error);
+        }
+        //
+        $notifyId = $stmt->insert_id;
+        $stmt->close();
+        //
+        return $notifyId;
+    }
+    public function GetNotify()
+    {
+        try {
+            $sql = "SELECT * FROM notify WHERE status IS NULL ";
+            $result = $this->conn->query($sql);
+        } catch (Exception) {
+            throw new Exception("error fetching");
+        }
+        // Fetch and return the data
+        if ($result) {
+            $data = $result->fetch_all(MYSQLI_ASSOC);
+            return $data;
+        }
+        return [];
+    }
+
+    public function DeleteNotify($id)
+    {
+        $sql = "DELETE FROM notify WHERE id = ?  LIMIT 1";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bind_param("i", $id);
+
+        if (!$stmt) {
+            http_response_code(500);
+            throw new Exception("Failed to prepare the SQL statement for deletion.");
+        }
+
+        if (!$stmt->execute()) {
+            http_response_code(500);
+            throw new Exception("Failed to execute the delete statement.");
+        }
+        if ($stmt->affected_rows <= 0) {
+            http_response_code(404);
+            throw new Exception("No matching record found to delete.");
+        }
+
+        return $stmt->affected_rows > 0;
+    }
+
+    public function UpdateStatus($id, $status)
+    {
+        $sql = "UPDATE notify SET status = ? WHERE id = ?";
+        $stmt = $this->conn->prepare($sql);
+
+        if (!$stmt) {
+            http_response_code(500);
+            throw new Exception("Failed to prepare the SQL statement for update.");
+        }
+
+        $stmt->bind_param("si", $status, $id);
+
+        if (!$stmt->execute()) {
+            http_response_code(500);
+            throw new Exception("Failed to execute the update statement.");
+        }
+
+        if ($stmt->affected_rows <= 0) {
+            http_response_code(404);
+            throw new Exception("No matching record found to update.");
+        }
+
+        return true;
     }
 }

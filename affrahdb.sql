@@ -153,6 +153,16 @@ ALTER TABLE membre ADD COLUMN fcm_token VARCHAR(255) NULL;
 ALTER TABLE client ADD COLUMN fcm_token VARCHAR(255) NULL;
 
 
+CREATE TABLE notify (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    fcm_token VARCHAR(255) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+
 ALTER TABLE `admin`
   ADD PRIMARY KEY (`id_a`),
   ADD UNIQUE KEY `email_a` (`email_a`),

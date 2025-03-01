@@ -1,17 +1,23 @@
 <?php
-//
 require_once __DIR__ . '/../Controller.php';
+
+// validation rules for all tables
+// validatedata methode = to generate validation rules and check them
+// validate image 
+// validate video
+
 class Validator extends Controller
 {
+    protected $data = [];
+    
     protected $validationRules = [
         'client' => [
-            'name' => ['required', 'string', 'min:4', 'max:100'],
+            'name' => ['required', 'string', 'max:100'],
             'wilaya' => ['required', 'string'],
-            'age' => ['required', 'integer', 'min:1', 'max:3'],
+            'age' => ['required', 'integer'],
             'email' => ['required', 'email', 'unique:client,email_c'],
-            'phone' => ['required', 'string', 'min:6', 'max:14', 'unique:client,tel_c'],
-            'password' => ['required', 'string', 'min:8'],
-            'image' => ['required'],
+            'phone' => ['required', 'string', 'min:8', 'max:14', 'unique:client,tel_c'],
+            'password' => ['required', 'string', 'min:6'],
         ],
         'annonce' => [
             'name' => ['required', 'string', 'max:255', 'unique:annonce,nom_an'],
@@ -23,7 +29,7 @@ class Validator extends Controller
             'phone' => ['string', 'max:30'],
             'mobile' => ['required', 'string', 'max:30'],
             'price' => ['nullable', 'numeric'],
-            'details' => ['nullable', 'string', 'max:500'],
+            'details' => ['nullable', 'string', 'max:1000'],
             'pricingNature' => ['nullable', 'string', 'max:255'],
             'image' => ['required'],
             'video' => ['nullable'],
@@ -33,10 +39,9 @@ class Validator extends Controller
         'boost' => [
             'duration' => ['required', 'integer'],
             'price' => ['required', 'numeric'],
-            'etat' => ['string', 'in:attente,active,inactive'],
             'idAnnonce' => ['required', 'integer', 'exists:annonce,id_an'],
             'image' => ['required'],
-            'type' => ['required','in:vip,gold'],
+            'type' => ['required', 'in:silver,gold'],
         ],
 
         'contact' => [
@@ -59,28 +64,27 @@ class Validator extends Controller
             'finalreservationDate' => ['required', 'date'],
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255'],
-            'phone' => ['required', 'string', 'max:30'],
+            'phone' => ['required', 'string'],
             'type' => ['required', 'string', 'max:255'],
-            'etat' => ['string', 'in:attente,active,inactive'],
             'idMember' => ['required', 'integer', 'exists:membre,id_m'],
             'idAnnonce' => ['required', 'integer', 'exists:annonce,id_an'],
         ],
 
         'member' => [
-            'name' => ['required', 'string', 'min:4', 'max:100'],
+            'name' => ['required', 'string', 'min:3', 'max:100'],
             'email' => ['required', 'email', 'unique:membre,email_m'],
             'wilaya' => ['required', 'string', 'min:3', 'max:100'],
-            'location' => ['required', 'string', 'min:3', 'max:255'],
-            'phone' => ['required', 'string', 'min:6', 'max:14', 'unique:membre,tel_m'],
-            'mobail' => ['required', 'string', 'min:6', 'max:14', 'unique:membre,mobil_m'],
-            'password' => ['required', 'string', 'min:8'],
+            'location' => ['string', 'min:3', 'max:255'],
+            'phone' => ['string', 'min:8', 'max:14', 'unique:membre,tel_m'],
+            'mobail' => ['required', 'string', 'min:8', 'max:14', 'unique:membre,mobil_m'],
+            'password' => ['required', 'string', 'min:6'],
             'image' => ['required'],
         ],
 
         'updateclient' => [
             'name' => ['string', 'min:4', 'max:100'],
             'wilaya' => ['string'],
-            'age' => ['integer', 'min:1', 'max:3'],
+            'age' => ['integer'],
             'email' => ['email', 'unique:client,email_c'],
             'phone' => ['string', 'min:6', 'max:14', 'unique:client,tel_c'],
             'password' => ['string', 'min:8'],
@@ -164,7 +168,6 @@ class Validator extends Controller
             'idAnnonce' => ['integer', 'exists:annonce,id_an'],
         ]
     ];
-    protected $data = [];
 
     public function validateData($data, $table)
     {
@@ -286,7 +289,7 @@ class Validator extends Controller
         }
         //
         if (!empty($errors)) {
-            http_response_code(422 );
+            http_response_code(422);
             throw new Exception(json_encode($errors));
         }
         //
@@ -300,8 +303,17 @@ class Validator extends Controller
                 $fileTmpPath = $image['tmp_name'];
                 $fileSize = $image['size'];
                 $fileType = mime_content_type($fileTmpPath);
-                $allowedMimeTypes = ['image/jpeg', 'image/png', 'image/jpg'];
-
+                $allowedMimeTypes = [
+                    'image/jpeg',
+                    'image/png',
+                    'image/jpg',
+                    'image/gif',
+                    'image/webp',
+                    'image/bmp',
+                    'image/svg+xml',
+                    'image/tiff'
+                ];
+                //
                 if (in_array($fileType, $allowedMimeTypes)) {
                     if ($fileSize <= 5 * 1024 * 1024) {
                         $status = true;
@@ -333,7 +345,7 @@ class Validator extends Controller
                 $allowedMimeTypes = ['video/mp4', 'video/x-matroska', 'video/avi', 'video/mpeg', 'image/jpeg', 'image/png'];
 
                 if (in_array($fileType, $allowedMimeTypes)) {
-                    if ($fileSize <= 20 * 1024 * 1024) {
+                    if ($fileSize <= 22 * 1024 * 1024) {
                         return true;
                     } else {
                         throw new Exception('The video exceeds the maximum allowed size of 20MB ');

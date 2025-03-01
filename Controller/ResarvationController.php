@@ -3,27 +3,27 @@ require_once 'Controller.php';
 require_once 'Services/Collection.php';
 require_once 'Services/Resource.php';
 require_once 'Services/Validator.php';
+require_once 'Services/Notification/Notify.php';
+
+//myresarvation = get resarvation for the client
+//monplanning = planning for membre or client 
 
 class ResarvationController extends Controller
 {
-  // more logic and validation for resarvation
-
 
   public function index($query = null)
   {
     try {
-      if ($query == null) {
-        $data = $this->resarvation->all();
-      } else {
-        $condition = Filter::Filterquery($query, 'resarvation');
-        $data = $this->resarvation->where($condition);
-      }
+      $data = $query
+        ? $this->resarvation->where(Filter::Filterquery($query, 'resarvation'))
+        : $this->resarvation->all();
+      //
       return [
         'status' => 'success',
         'message' => 'data retrieved successfully',
         'data' => Collection::returnReservations($data)
       ];
-    } catch (Exception $e) {
+    } catch (Exception) {
       //
       http_response_code(500);
       return [
@@ -43,7 +43,7 @@ class ResarvationController extends Controller
         'message' => 'data retrieved successfully',
         'data' => Resource::ReturnReservation($data)
       ];
-    } catch (Exception $e) {
+    } catch (Exception) {
       // 
       http_response_code(500);
       return [
@@ -63,11 +63,16 @@ class ResarvationController extends Controller
       //validation
       $valid = new Validator();
       $data = $valid->validateData($data, 'reservation');
+      if ($data['reservationDate'] < date('Y-m-d H:i:s') || $data['finalreservationDate'] < $data['reservationDate']) {
+        throw new Exception('date invalide ');
+      }
       //resource
       $data = Resource::GetReservation($data);
       $data['id_c'] = $user['sub'];
       //create  
       $this->resarvation->create($data);
+      //send notification to membre
+      $this->membre->StoreFCM('New Resarvation Affrah', 'you have new resarvation from client ', $data['id_m'], 'membre');
       //return true 
       return [
         'status' => 'success',
@@ -90,13 +95,16 @@ class ResarvationController extends Controller
       //authentication role 
       $auth = new Auth();
       $user = $auth->checkRole(['client', 'membre']);
+      //find resarvation
       $reserv = $this->resarvation->find($id, 'id_r');
+      //authoraztion for client
       if ($user['role'] == 'client') {
         if ($user['sub'] !== $reserv['id_c']) {
           http_response_code(403);
           throw new Exception('this client is not allowed for edite');
         }
       }
+      // authoration for membre
       if ($user['role'] == 'membre') {
         if ($user['sub'] !== $reserv['id_m']) {
           throw new Exception('this membre is not allowed for edite');
@@ -105,13 +113,14 @@ class ResarvationController extends Controller
       // validation
       $valide = new Validator();
       $data = $valide->validateData($data, 'updatereservation');
-      // resource 
+      //resource 
       $data = Resource::UpdateReservation($data);
       // Update operation
-      if (empty($data)) {
-        throw new Exception('emty data given');
+      if (!empty($data)) {
+        $this->resarvation->update($id, $data, 'id_r');
+        //send notification to membre
+        $this->membre->StoreFCM('Resarvation Status', 'check your resarvation status ', $reserv['id_c'], 'client');
       }
-      $this->resarvation->update($id, $data, 'id_r');
       // Return success response
       return [
         'status' => 'success',

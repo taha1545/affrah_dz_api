@@ -2,6 +2,8 @@
 
 require_once 'Resource.php';
 
+// group of resources 
+
 class Collection
 {
 
@@ -37,10 +39,10 @@ class Collection
                 'city' => $announceData['ville_an'],
                 'address' => $announceData['adresse_an'],
                 'price' => (float) $announceData['tarif_an'],
-                'image_full_path' => $announceData['file_path'] . $announceData['file_name'],
+                'image_full_path' => $announceData['file_path'],
                 'type' => $announceData['type_b'],
-                'date'=>$announceData['date_cr'],
-                'rating' => [4, 4.5, 5][array_rand([4, 4.5, 5])],
+                'date' => $announceData['date_cr'],
+                'rating' => [4, 4.5, 5][array_rand([4.5, 5])],
             ];
         }
         return $announces;

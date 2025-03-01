@@ -1,8 +1,10 @@
 <?php
-
+ 
 use Kreait\Firebase\Factory;
 use Kreait\Firebase\Messaging\CloudMessage;
 use Kreait\Firebase\Messaging\Notification;
+
+// class to send notification using firbase fcm
 
 class Notify
 {
@@ -26,6 +28,9 @@ class Notify
             return ['success' => false, 'error' => $e->getMessage()];
         }
     }
+
+    //create in db 
+    // worker 
 }
 
 

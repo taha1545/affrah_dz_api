@@ -4,6 +4,8 @@ use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 use Dotenv\Dotenv;
 
+// to use token and maniplate users and securite
+
 class Auth
 {
     private $secret;

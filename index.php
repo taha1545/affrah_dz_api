@@ -3,14 +3,17 @@ require 'vendor/autoload.php';
 
 //start
 ob_start();
+
 // Define CORS headers
 header("Access-Control-Allow-Origin: * ");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
+
 // Use autoloading for controllers 
 spl_autoload_register(function ($class) {
   include 'Controller/' . $class . '.php';
 });
+
 // Initialize controllers (lazy loading can be implemented if needed)
 $clientController = new ClientController();
 $membreController = new MembreController();
@@ -20,6 +23,8 @@ $annonceController = new AnnonceController();
 $favorisController = new FavorisController();
 $boostController = new BoostController();
 $imagesController = new ImageController();
+$worker = new Worker();
+
 // Set content type to JSON
 header('Content-Type: application/json');
 // get URL and method
@@ -55,6 +60,7 @@ if ($method === 'POST') {
   $rawInput = file_get_contents('php://input');
   $data = json_decode($rawInput, true) ?? [];
 }
+
 // routing
 $router = [
   'GET' => [
@@ -80,7 +86,7 @@ $router = [
     'annonce/vip' => fn() => $annonceController->showvip($query),
     'annonce/gold' => fn() => $annonceController->showgold($query),
     'annonce/(\d+)' => fn($id) => $annonceController->show($id),
-    'annonce/search/(.+)' => fn($word) => $annonceController->search(urldecode($word),$query),
+    'annonce/search/(.+)' => fn($word) => $annonceController->search(urldecode($word), $query),
     'annonce/visite/(\d+)' => fn($id) => $annonceController->visite($id),
     //
     'favoris' => fn() => $favorisController->index(),
@@ -95,6 +101,7 @@ $router = [
     'images' => fn() => $imagesController->index(),
     'images/(\d+)' => fn($id) => $imagesController->show($id),
     //
+    'startworker' => fn() => $worker->processNotifications(),
   ],
   'POST' => [
     'client' => fn() => $clientController->create($data),
@@ -102,12 +109,12 @@ $router = [
     'getinfo' => fn() => $clientController->userbytoken($data),
     'client/forget' => fn() => $clientController->updatepassword($data),
     'client/OTP' => fn() => $clientController->OTP($data),
-    'client/image/update/(\d+)'=>fn($id)=>$clientController->updateimage($id,$data),
+    'client/image/update/(\d+)' => fn($id) => $clientController->updateimage($id, $data),
     'membre' => fn() => $membreController->create($data),
     'membre/login' => fn() => $membreController->login($data),
     'membre/forget' => fn() => $membreController->updatepassword($data),
     'membre/OTP' => fn() => $membreController->OTP($data),
-    'membre/image/update/(\d+)'=>fn($id)=>$membreController->updateimage($id,$data),
+    'membre/image/update/(\d+)' => fn($id) => $membreController->updateimage($id, $data),
     //
     'resarvation' => fn() => $resarvationController->create($data),
     'annonce' => fn() => $annonceController->create($data),

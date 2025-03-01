@@ -47,7 +47,6 @@ class ImageController extends Controller
   }
 
 
-
   public function create($data)
   {
     try {

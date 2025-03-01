@@ -1,22 +1,30 @@
 <?php
 
+// resource for change db colums to names canbe used in api
+//  get and update work to take data and make it in db
+//  return get from db and return it to front 
+
+
 class Resource
 {
-    // CLIENT 
+
     public static function GetClient($data)
     {
         return [
             'nom_c' => $data['name'],
             'ville_c' => $data['wilaya'],
-            'age_c' => $data['age'],
+            'age_c' => $data['age'] ?? 22,
             'email_c' => $data['email'],
             'tel_c' => $data['phone'],
             'mdp_c' => password_hash($data['password'], PASSWORD_BCRYPT),
-            'etat_c' => "active",
+            'etat_c' => "valide",
             'signale' => "non",
             'id_a' => 1,
             'id_mo' => 1,
-            'photo_c' => file_get_contents($data['image']['tmp_name'])
+            'photo_c' => isset($data['image']['tmp_name']) && is_file($data['image']['tmp_name'])
+                ? file_get_contents($data['image']['tmp_name'])
+                : null,
+            'fcm_token' => $data['fcm'] ?? null
         ];
     }
     public static function UpdateClient($data)
@@ -27,7 +35,7 @@ class Resource
             'age_c' => $data['age'] ?? null,
             'tel_c' => $data['phone'] ?? null,
             'mdp_c' => isset($data['password']) ? password_hash($data['password'], PASSWORD_BCRYPT) : null,
-            'signale' => $data['banned'] ?? null,
+            'fcm_token' => $data['fcm'] ?? null
         ];
 
         // Filter out null values
@@ -50,7 +58,7 @@ class Resource
             'phone' => $data['tel_c'],
         ];
     }
-    // ANNONCE
+
     public static function GetAnnonce($data)
     {
         return [
@@ -70,11 +78,11 @@ class Resource
             'nature_tarif' => $data['pricingNature'] ?? null,
             'visites' =>  0,
             'jaime' =>  0,
-            'file_name' => $data['image']['name'], //image
-            'file_path' => $data['image']['path'],
+            'file_name' => $data['image']['name'],
+            'file_path' =>  $data['image']['path'] . $data['image']['name'],
             'file_size' => $data['image']['size'],
-            'file_name_video' => $data['video']['name'] ?? null, //video
-            'file_path_video' => $data['video']['path'] ?? null,
+            'file_name_video' => $data['video']['name']  ?? null,
+            'file_path_video' => ($data['video']['path'] ?? null) . ($data['video']['name'] ?? null),
             'file_size_video' => $data['video']['size'] ?? null
         ];
     }
@@ -98,14 +106,14 @@ class Resource
             'visits' => (int)$data['visites'],
             'likes' => (int) $data['jaime'],
             'idmobmre' => (int) $data['id_m'],
-            'image_full_path' => $data['file_path'] . $data['file_name'],
-            'video_full_path' => $data['file_path_video'] . $data['file_name_video'] ?? null,
+            'image_full_path' => $data['file_path'],
+            'video_full_path' => $data['file_path_video'] ?? null,
             'boost' => $data['boost'] ? Resource::ReturnBoost($data['boost']) : [],
             'images' => $data['images'] ? Collection::ReturnImages($data['images']) : [],
         ];
     }
 
-    // BOOST
+
     public static function GetBoost($data)
     {
         return [
@@ -116,7 +124,7 @@ class Resource
             'date_cr_b' =>  date("Y-m-d H:i:s", time()),
             'id_mo' => 1,
             'recu_b' => file_get_contents($data['image']['tmp_name']),
-            'type_b'=>$data['type']
+            'type_b' => $data['type']
         ];
     }
 
@@ -134,7 +142,7 @@ class Resource
         ];
     }
 
-    // CONTACT
+
     public static function GetContact($data)
     {
         return [
@@ -142,8 +150,8 @@ class Resource
             'email' => $data['email'] ?? null,
             'msg' => $data['message'],
             'tel' => $data['phone'] ?? null,
-            'sujet' => $data['subject'] ,
-            'genre' => $data['genre'] ,
+            'sujet' => $data['subject'],
+            'genre' => $data['genre'],
         ];
     }
 
@@ -163,7 +171,7 @@ class Resource
         ];
     }
 
-    // FAVORITE
+
     public static function GetFavorite($data)
     {
         return [
@@ -184,7 +192,7 @@ class Resource
         ];
     }
 
-    // RESERVATION
+
     public static function GetReservation($data)
     {
         return [
@@ -221,23 +229,22 @@ class Resource
     }
 
 
-    // MEMBRE
     public static function GetMembre($data)
     {
         return [
             'nom_m' => $data['name'],
             'email_m' => $data['email'],
             'ville_m' => $data['wilaya'],
-            'adresse_m' => $data['location'],
-            'tel_m' => $data['phone'],
+            'adresse_m' => $data['location'] ?? null,
+            'tel_m' => $data['phone'] ?? null,
             'mobil_m ' => $data['mobail'],
             'mdp_m' => password_hash($data['password'], PASSWORD_BCRYPT),
             'etat_m' =>  "attente",
             'id_a' =>  1,
             'signale' =>  "non",
             'id_mo' => 1,
-            'fcm_token' =>$data['fcm'] ?? null,
-            'photo_m' => file_get_contents($data['image']['tmp_name'])
+            'fcm_token' => $data['fcm'] ?? null,
+            'photo_m' => file_get_contents($data['image']['tmp_name'])  ?? null
         ];
     }
 
@@ -254,7 +261,7 @@ class Resource
             'mobail' => $data['mobil_m'],
         ];
     }
-    // updates 
+
     public static function UpdateAnnonce($data)
     {
         $newdata = [
@@ -268,8 +275,6 @@ class Resource
             'mobile_an' => $data['mobile'] ?? null,
             'tarif_an' => $data['price'] ?? null,
             'detail_an' => $data['details'] ?? null,
-            'etat_an' => $data['etat'] ?? null,
-            'id_m' => $data['idMember'] ?? null,
             'nature_tarif' => $data['pricingNature'] ?? null,
             'visites' => $data['visits'] ?? null,
             'jaime' => $data['likes'] ?? null,
@@ -278,23 +283,17 @@ class Resource
         return array_filter($newdata, fn($value) => $value !== null);
     }
 
-    
+
     public static function UpdateBoost($data)
     {
         $newdata = [
             'duree_b' => $data['duration'] ?? null,
-            'tarif_b' => $data['price'] ?? null,
-            'etat_b' => $data['etat'] ?? null,
-            'id_m' => $data['idMember'] ?? null,
-            'id_an' => $data['idAnnonce'] ?? null,
-            'date_cr_b' => $data['creationDate'] ?? null,
-            'id_mo' => $data['idModerateur'] ?? null,
         ];
 
         return array_filter($newdata, fn($value) => $value !== null);
     }
 
-   
+
     public static function UpdateContact($data)
     {
         $newdata = [
@@ -322,7 +321,7 @@ class Resource
 
         return array_filter($newdata, fn($value) => $value !== null);
     }
-   
+
     public static function UpdateReservation($data)
     {
         $newdata = [
@@ -333,10 +332,6 @@ class Resource
             'tel_c_r' => $data['phone'] ?? null,
             'type_fete' => $data['type'] ?? null,
             'etat_r' => $data['etat'] ?? null,
-            'date_cr' => $data['date'] ?? null,
-            'id_c' => $data['idClient'] ?? null,
-            'id_m' => $data['idMember'] ?? null,
-            'id_an' => $data['idAnnonce'] ?? null
         ];
 
         return array_filter($newdata, fn($value) => $value !== null);
@@ -365,14 +360,13 @@ class Resource
     }
 
 
-    //image
     public static function  GetImages($data)
     {
         return [
             'nom_img' => $data['image']['name'],
             'taille_img' => $data['image']['size'],
             'type_img' => $data['image']['type'],
-            'chemin_img' => $data['image']['path'],
+            'chemin_img' => $data['image']['path'] . $data['image']['name'],
             'date_cr' => date('y-m-d  h:m:s'),
             'id_an' => $data['idAnnonce'],
         ];
@@ -383,7 +377,7 @@ class Resource
             'nom_img' => $data['image']['name'],
             'taille_img' => $data['image']['size'],
             'type_img' => $data['image']['type'],
-            'chemin_img' => $data['image']['path'],
+            'chemin_img' => $data['image']['path'] . $data['image']['name'],
             'date_cr' => date('y-m-d h:m:s'),
             'id_an' => $data['idAnnonce'] ?? null,
         ];
@@ -398,8 +392,8 @@ class Resource
     {
         return [
             'id' => $data['id_img'],
-            'image_path' => $data['chemin_img'] . $data['nom_img'],
-            'idAnnonce'=>$data['id_an']
+            'image_path' => $data['chemin_img'],
+            'idAnnonce' => $data['id_an']
         ];
     }
 
@@ -409,7 +403,7 @@ class Resource
             'nom_img' => $data['name'],
             'taille_img' => $data['size'],
             'type_img' => $data['type'],
-            'chemin_img' => $data['path'],
+            'chemin_img' => $data['path'] . $data['name'],
             'date_cr' => date('y-m-d  h:m:s'),
             'id_an' => $id,
         ];

@@ -6,11 +6,18 @@ require_once 'Services/Validator.php';
 require_once 'Services/auth.php';
 require_once 'Services/Mail.php';
 
+// index = all user fetch
+// show = one user fetch 
+// create = for signup 
+// update to update user data
+// show image to get image for client
+//login = login user 
+// otp and forgetpassword = for forget password logic it send mail to client for otp check 
+// updateimage = to update image for client  
+// userbytoken = to get data from token (just for test in postman)
+
 class ClientController extends Controller
 {
-
-  //queue
-  //update image 
 
   public function index()
   {
@@ -31,10 +38,12 @@ class ClientController extends Controller
     }
   }
 
+  //show client
   public function show($id)
   {
     try {
       $client = $this->client->find($id, 'id_c');
+      //
       return [
         'status' => 'success',
         'message' => 'Client retrieved successfully',
@@ -50,7 +59,7 @@ class ClientController extends Controller
     }
   }
 
-
+  // signup
   public function create($data)
   {
     try {
@@ -58,25 +67,30 @@ class ClientController extends Controller
       $valid = new Validator();
       $data = $valid->validateData($data, 'client');
       //image validation
-      $valid->ValideImage($data['image']);
+      if (isset($data['image'])) {
+        $valid->ValideImage($data['image']);
+      }
       //resource
       $data = Resource::GetClient($data);
-      //create  
+      //create in db
       $id = $this->client->create($data);
       //generate token 
       $auth = new Auth();
       $token = $auth->generateToken($id, 'client');
-      //
+      // return with 201
       http_response_code(201);
       return [
         'status' => 'success',
         'message' => 'data created success',
         'token' => $token,
       ];
+      // catch errors 
     } catch (Exception $e) {
+      // if empty message docode than it means its server error not 421 
       if (empty(json_decode($e->getMessage()))) {
         http_response_code(500);
       }
+      //
       return [
         'status' => 'error',
         'message' => json_decode($e->getMessage()) ?? "Can't SignIn Try Later",
@@ -88,12 +102,12 @@ class ClientController extends Controller
   public function update($id, $data)
   {
     try {
-      //auth
+      //auth to get role and user id
       $auth = new Auth();
       $user = $auth->checkRole(['client']);
-      //
+      // find client in db
       $client = $this->client->find($id, 'id_c');
-      //
+      // authorazation
       if ($client['id_c'] !== $user['sub']) {
         throw new Exception('u cant update this resource');
       }
@@ -105,8 +119,6 @@ class ClientController extends Controller
       // Update operation
       if ($data !== []) {
         $this->client->update($id, $data, 'id_c');
-      } else {
-        throw new Exception('no data to update');
       }
       // Return success response
       return [
@@ -123,21 +135,20 @@ class ClientController extends Controller
     }
   }
 
-
   public function delete($id)
   {
     try {
-      //auth
+      //auth to get data 
       $auth = new Auth();
       $user = $auth->checkRole(['client']);
-      //
+      //find
       $client = $this->client->find($id, 'id_c');
-      //
+      // authorazation 
       if ($client['id_c'] !== $user['sub']) {
         throw new Exception('u cant delete this resource');
       }
-      // block user
-      $this->client->update($id, ['signale' => 'oui'], 'id_c');
+      // delete user
+      $this->client->delete($id, 'id_c');
       // Return success response
       return [
         'status' => 'success',
@@ -156,146 +167,126 @@ class ClientController extends Controller
 
   public function showImage($id)
   {
-    // Retrieve the image using the client service or model
     $image = $this->client->findImage($id, 'id_c');
 
     if ($image && isset($image['photo_c'])) {
-      // Retrieve the image data
       $imageData = $image['photo_c'];
 
-      // Validate the MIME type of the image
       $finfo = finfo_open(FILEINFO_MIME_TYPE);
       $mimeType = finfo_buffer($finfo, $imageData);
       finfo_close($finfo);
 
-      // Check if the MIME type is valid (JPEG or PNG)
-      if (in_array($mimeType, ['image/jpeg', 'image/jpg', 'image/png'])) {
-        // Set the appropriate content type for the image
+      $allowedTypes = [
+        'image/jpeg',
+        'image/jpg',
+        'image/png',
+        'image/gif',
+        'image/webp',
+        'image/bmp',
+        'image/tiff',
+        'image/svg+xml'
+      ];
+
+      if (in_array($mimeType, $allowedTypes)) {
         header('Content-Type: ' . $mimeType);
-
-        // Output the image data
         echo $imageData;
-      } else {
-        // Invalid image format
-        http_response_code(415);
-        echo "Invalid image format";
+        return;
       }
-    } else {
-      // Image not found
-      http_response_code(404);
-      echo "Image not found.";
     }
+
+    $defaultImagePath = './catg/profile.png';
+    header('Content-Type: image/png');
+    readfile($defaultImagePath);
   }
 
-  public function login($data)
+
+  public function login(array $data)
   {
-    // Validate the input
-    if (empty($data["email"]) || empty($data["password"])) {
+    if ((empty($data["email"]) && empty($data["phone"])) || empty($data["password"])) {
       http_response_code(400);
-      return [
-        'status' => 'error',
-        'message' => 'Email or password is missing',
-      ];
+      return ['status' => 'error', 'message' => 'Email/Phone or password is missing'];
     }
+    //
     try {
-      // Find the user by email
-      $user = $this->client->find($data['email'], 'email_c');
-
+      if (isset($data['phone'])) {
+        $user = $this->client->find($data['phone'], 'tel_c');
+      } else {
+        $user = $this->client->find($data['email'], 'email_c');
+      }
+      //
       if (!$user) {
-        // User not found
-        http_response_code(404); // Not Found
-        return [
-          'status' => 'error',
-          'message' => 'User not found',
-        ];
+        http_response_code(404);
+        return ['status' => 'error', 'message' => 'User not found'];
       }
-
-      // Verify the password
-      if (password_verify($data['password'], $user['mdp_c'])) {
-        // Generate and return the token
-        $auth = new Auth();
-        http_response_code(200); // OK
-        return [
-          'status' => 'success',
-          'token' => $auth->generateToken($user['id_c'], 'client'),
-        ];
-      } else {
-        // Password mismatch
-        http_response_code(401); // Unauthorized
-        return [
-          'status' => 'error',
-          'message' => 'Invalid credentials',
-        ];
+      //
+      if (!password_verify($data['password'], $user['mdp_c'])) {
+        http_response_code(401);
+        return ['status' => 'error', 'message' => 'Invalid credentials'];
       }
-    } catch (Exception $e) {
-      // Handle unexpected errors
-      http_response_code(500); // Internal Server Error
-      return [
-        'status' => 'error',
-        'message' => 'user not found',
-      ];
-    }
-  }
-
-  public function updatepassword($data)
-  {
-    try {
-      // get data 
-      $data = [
-        'email_c' => $data['email'] ?? null,
-        'mdp_c' => $data['password'] ?? null
-      ];
-      // test email
-      if (isset($data['email_c'])) {
-        // password validation 
-        if (isset($data['mdp_c']) && (strlen($data['mdp_c']) >= 8)) {
-          //find user 
-          $data['mdp_c'] = password_hash($data['mdp_c'], PASSWORD_BCRYPT);
-          $this->client->updatepass($data['email_c'], 'email_c', $data);
-          $userid = $this->client->find($data['email_c'], 'email_c');
-          // generate token 
-          $auth = new Auth();
-          $token = $auth->generateToken($userid['id_c'], 'client');
-          return [
-            'status' => 'success',
-            'message' => 'resouce created seccessfly',
-            'token' => $token
-          ];
-        } else {
-          http_response_code(400);
-          return [
-            'status' => 'error',
-            'message' => 'password is required '
-          ];
-        }
-      } else {
-        http_response_code(400);
-        return [
-          'status' => 'error',
-          'message' => 'email is required '
-        ];
+      //
+      if (!empty($data['fcm']) && $user['fcm_token'] !== $data['fcm']) {
+        $this->client->update($user['id_c'], ['fcm_token' => $data['fcm']], 'id_c');
       }
-    } catch (Exception $e) {
-      // Handle error
+      //
+      $auth = new Auth();
+      $token = $auth->generateToken($user['id_c'], 'client');
+      //
+      http_response_code(200);
+      return ['status' => 'success', 'token' => $token];
+    } catch (Exception) {
       http_response_code(500);
-      return [
-        'status' => 'error',
-        'message' => "Can't Update Password"
-      ];
+      return ['status' => 'error', 'message' => 'An unexpected error occurred'];
     }
   }
+
+
+  public function updatePassword(array $data)
+  {
+    if (empty($data['email'])) {
+      http_response_code(400);
+      return ['status' => 'error', 'message' => 'Email is required'];
+    }
+    //
+    if (empty($data['password']) || strlen($data['password']) < 8) {
+      http_response_code(400);
+      return ['status' => 'error', 'message' => 'Password must be at least 8 characters long'];
+    }
+    //
+    try {
+      //
+      $hashedPassword = password_hash($data['password'], PASSWORD_BCRYPT);
+      //
+      $user = $this->client->find($data['email'], 'email_c');
+      //
+      $this->client->updatepass($data['email'], 'email_c', ['mdp_c' => $hashedPassword]);
+      //
+      if (!$user) {
+        http_response_code(404);
+        return ['status' => 'error', 'message' => 'User not found'];
+      }
+      //
+      $auth = new Auth();
+      $token = $auth->generateToken($user['id_c'], 'client');
+      //
+      return [
+        'status' => 'success',
+        'message' => 'Password updated successfully',
+        'token' => $token
+      ];
+    } catch (Exception $e) {
+      http_response_code(500);
+      return ['status' => 'error', 'message' => "Can't update password"];
+    }
+  }
+
 
   public function userbytoken($data)
   {
     try {
+      //
       $token = $data['token'] ?? null;
-      if (isset($token)) {
-        $auth = new Auth();
-        return [
-          'status' => 'success',
-          'data' => $auth->validateToken($token)
-        ];
-      } else {
+      //
+      if (!isset($token)) {
         http_response_code(401);
         return [
           'status' => 'error',
@@ -303,11 +294,17 @@ class ClientController extends Controller
         ];
       }
       //
+      $auth = new Auth();
+      return [
+        'status' => 'success',
+        'data' => $auth->validateToken($token)
+      ];
+      //
     } catch (Exception) {
       http_response_code(403);
       return [
         'status' => 'error',
-        'message' => 'token not valid'
+        'message' => 'token not valid',
       ];
     }
   }
@@ -315,16 +312,15 @@ class ClientController extends Controller
   public function  OTP($data)
   {
     try {
-      //
       if (empty($data['email'])) {
         throw new Exception('Email is required');
       }
-      // 
+      // find user data
       $email = $data['email'];
       $user = $this->client->find($email, 'email_c');
-      //random number
+      //random number to front
       $number = random_int(10000, 99999);
-      // send 
+      // send  mail 
       $mail = new Mail();
       if (!$mail->sendmail($email, $number)) {
         throw new Exception('message not send to $email');
@@ -347,21 +343,21 @@ class ClientController extends Controller
   public function updateimage($id, $data)
   {
     try {
-      //auth
+      //auth to get data of token
       $auth = new Auth();
       $user = $auth->checkRole(['client']);
+      //find user
       $client = $this->client->find($id, 'id_c');
       //authorize
-        if($client['id_c'] !== $user['sub']){
-          throw new Exception('u cant update this resource');
-        }
+      if ($client['id_c'] !== $user['sub']) {
+        throw new Exception('u cant update this resource');
+      }
       //validate image
-        $valid=new Validator();
-        $valid::ValideImage($data['image']);
-        //
-       $image=$data['image'];
-        $this->client->update($id,['photo_c'=>file_get_contents($data['image']['tmp_name'])],'id_c');
-
+      $valid = new Validator();
+      $valid::ValideImage($data['image']);
+      //update in db
+      $image = $data['image'];
+      $this->client->update($id, ['photo_c' => file_get_contents($data['image']['tmp_name'])], 'id_c');
       //return true
       http_response_code(200);
       return [
@@ -377,5 +373,4 @@ class ClientController extends Controller
       ];
     }
   }
-  
 }
