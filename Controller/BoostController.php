@@ -146,4 +146,6 @@ class BoostController extends Controller
       http_response_code(404);
     }
   }
+
+
 }

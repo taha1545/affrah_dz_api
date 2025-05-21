@@ -31,6 +31,22 @@ class Collection
     {
         $announces = [];
         foreach ($data as $announceData) {
+            $boostType = $announceData['type_b'] ?? null;
+            $visites = (int) ($announceData['visites'] ?? 0);
+            $jaime = (int) ($announceData['jaime'] ?? 0);
+
+            // 
+            if ($boostType === 'gold') {
+                $rating = 4 + ($jaime * 0.05) + ($visites * 0.002);
+            } elseif ($boostType === 'silver') {
+                $rating = 3 + ($jaime * 0.05) + ($visites * 0.002);
+            } else {
+                $rating = 0 + ($jaime * 0.02) + ($visites * 0.001);
+            }
+
+            //
+            $rating = round(min($rating, 5), 2);
+
             $announces[] = [
                 'id' => (int) $announceData['id_an'],
                 'name' => $announceData['nom_an'],
@@ -40,13 +56,16 @@ class Collection
                 'address' => $announceData['adresse_an'],
                 'price' => (float) $announceData['tarif_an'],
                 'image_full_path' => $announceData['file_path'],
-                'type' => $announceData['type_b'],
+                'type' => $boostType,
                 'date' => $announceData['date_cr'],
-                'rating' => [4, 4.5, 5][array_rand([4.5, 5])],
+                'rating' => $rating,
             ];
         }
+
         return $announces;
     }
+
+
 
     // BOOSTS
     public static function returnBoosts($data)

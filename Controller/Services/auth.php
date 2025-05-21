@@ -4,7 +4,7 @@ use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 use Dotenv\Dotenv;
 
-// to use token and maniplate users and securite
+// 
 
 class Auth
 {
@@ -17,7 +17,7 @@ class Auth
         $this->secret = $_ENV['SECRET'];
     }
 
-    // Generate JWT Token
+    // 
     public function generateToken($userId, $role)
     {
         $payload = [
@@ -30,7 +30,7 @@ class Auth
         return JWT::encode($payload, $this->secret, 'HS256');
     }
 
-    // Validate JWT Token
+    // 
     public function validateToken($token)
     {
         try {
@@ -42,7 +42,7 @@ class Auth
         }
     }
 
-    // Middleware to Validate Auth Token
+    // 
     public function authMiddleware()
     {
         $headers = getallheaders();
@@ -60,7 +60,7 @@ class Auth
         }
     }
 
-    // Check Role
+    // 
     public function checkRole($requiredRole = [])
     {
         $decoded = $this->authMiddleware();
@@ -71,16 +71,35 @@ class Auth
         return $decoded;
     }
 
-    // Get User ID from Token
+    // 
     public function getUserIdFromToken()
     {
         $decoded = $this->authMiddleware();
         return $decoded['sub'];
     }
-    // Get Role from Token
+
+
+    //
     public function getRoleFromToken()
     {
         $decoded = $this->authMiddleware();
         return $decoded['role'];
+    }
+
+    public function getuser()
+    {
+        try {
+            $headers = getallheaders();
+            if (!isset($headers['Authorization'])) {
+                return null;
+            }
+            //
+            $token = str_replace('Bearer ', '', $headers['Authorization']);
+            $decoded = JWT::decode($token, new Key($this->secret, 'HS256'));
+            return (array) $decoded;
+            //
+        } catch (Exception) {
+            return null;
+        }
     }
 }

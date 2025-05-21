@@ -9,7 +9,7 @@ class Models
 
     protected $hidden_column;
 
-    //db photos or  longblob that should not be return it with other data
+    //db photos or  longblob 
     protected $hidden_columns = [
         'client' => ['photo_c'],
         'admin' => ['photo_a'],
@@ -122,7 +122,9 @@ class Models
             'id_a',
             'signale',
             'id_mo',
-            'fcm_token'
+            'fcm_token',
+            'code',
+            'code_use'
         ],
         //images
         'images' => [
@@ -320,7 +322,7 @@ class Models
         }
     }
 
-    // for fetch all with filter
+    // 
     public function where($conditions = [], $options = [])
     {
         try {
@@ -385,7 +387,7 @@ class Models
             throw new Exception("Error in where query: " . $e->getMessage());
         }
     }
-    // to update password to client or membre
+    // 
     public function updatepass($key, $keyname, $data)
     {
         // Ensure input data is not empty
@@ -420,7 +422,7 @@ class Models
         return $this->conn->insert_id;
     }
 
-    // get all result not just one 
+    // 
     public function findall($id, $key)
     {
         //
@@ -478,41 +480,44 @@ class Models
         return [];
     }
 
-    public function allvip($page = 1, $perPage = 30)
+    public function allvip($page = 1, $perPage = 30, $wilaya = null)
     {
         $columns = implode(', ', $this->Columns['annonce']);
         $offset = ($page - 1) * $perPage;
-        //
+
         try {
-            // Count total records for pagination
+            // Count total records
             $countSql = "SELECT COUNT(*) as total FROM annonce a 
-                     JOIN boost b ON a.id_an = b.id_an
-                     WHERE b.type_b = 'gold' AND b.etat_b = 'valide' AND DATE_ADD(b.date_cr_b, INTERVAL b.duree_b DAY) >= NOW()  AND a.etat_an = 'valide'";
-            //         
+                         JOIN boost b ON a.id_an = b.id_an
+                         WHERE b.type_b = 'gold' AND b.etat_b = 'valide' AND DATE_ADD(b.date_cr_b, INTERVAL b.duree_b DAY) >= NOW()  
+                         AND a.etat_an = 'valide'";
             $countResult = $this->conn->query($countSql);
             $totalRows = $countResult->fetch_assoc()['total'];
             $totalPages = ceil($totalRows / $perPage);
-            // Fetch paginated results
+
+            // Add priority sorting by wilaya (ville)
+            $wilayaOrder = $wilaya ? "CASE WHEN a.ville_an = '{$this->conn->real_escape_string($wilaya)}' THEN 0 ELSE 1 END," : "";
+
             $sql = "SELECT a.*, latest_boost.type_b
-                FROM annonce a 
-                JOIN (
-                    SELECT 
-                        b.*,
-                        ROW_NUMBER() OVER (PARTITION BY id_an ORDER BY date_cr_b DESC) AS rn
-                    FROM boost b
-                    WHERE b.type_b = 'gold' AND b.etat_b = 'valide' AND DATE_ADD(b.date_cr_b, INTERVAL b.duree_b DAY) >= NOW() 
-                ) latest_boost ON a.id_an = latest_boost.id_an AND latest_boost.rn = 1
-                WHERE a.etat_an = 'valide'
-                ORDER BY a.date_cr DESC, a.jaime DESC
-                LIMIT $perPage OFFSET $offset";
-            //
+                    FROM annonce a 
+                    JOIN (
+                        SELECT 
+                            b.*,
+                            ROW_NUMBER() OVER (PARTITION BY id_an ORDER BY date_cr_b DESC) AS rn
+                        FROM boost b
+                        WHERE b.type_b = 'gold' AND b.etat_b = 'valide' AND DATE_ADD(b.date_cr_b, INTERVAL b.duree_b DAY) >= NOW() 
+                    ) latest_boost ON a.id_an = latest_boost.id_an AND latest_boost.rn = 1
+                    WHERE a.etat_an = 'valide'
+                    ORDER BY $wilayaOrder a.date_cr DESC, a.jaime DESC
+                    LIMIT $perPage OFFSET $offset";
+
             $result = $this->conn->query($sql);
         } catch (Exception) {
             throw new Exception("error fetching");
         }
-        // Fetch data
+
         $data = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
-        // Add pagination metadata to $result
+
         return [
             'paginate' => [
                 'current_page' => (int) $page,
@@ -523,6 +528,7 @@ class Models
             'data' => $data
         ];
     }
+
 
 
     public function allboost($page = 1, $perPage = 30)
@@ -1415,5 +1421,82 @@ class Models
         }
 
         return true;
+    }
+
+    public function AddPointCoins($code)
+    {
+        try {
+            $stmt = $this->conn->prepare("UPDATE membre SET code_use = code_use + 1 WHERE code = ?");
+            $stmt->execute([$code]);
+            // 
+            return  1;
+            //
+        } catch (Exception $e) {
+            return 0;
+        }
+    }
+
+    public function hasUsedCodeMoreThanTen($id)
+    {
+        try {
+            $stmt = $this->conn->prepare("SELECT code_use FROM membre WHERE id_m = ?");
+            $stmt->execute([$id]);
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            return $result && $result['code_use'] > 10;
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+
+    public function createBoostForMembre($id, $id_an)
+    {
+        try {
+            // Start transaction
+            $this->conn->autocommit(false);
+
+            // 1. Fetch member
+            $stmt = $this->conn->prepare("SELECT code_use FROM membre WHERE id_m = ?");
+            $stmt->bind_param("i", $id);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $membre = $result->fetch_assoc();
+            $stmt->close();
+
+            if (!$membre || $membre['code_use'] < 10) {
+                $this->conn->rollback();
+                throw new Exception('ur point are not enough');
+            }
+
+            // 2. Deduct 10 points
+            $stmt = $this->conn->prepare("UPDATE membre SET code_use = code_use - 10 WHERE id_m = ?");
+            $stmt->bind_param("i", $id);
+            $stmt->execute();
+            $stmt->close();
+
+            // 3. Create boost
+            $duree_b = 7;
+            $tarif_b = 0.0;
+            $recu_b = null;
+            $etat_b = 'valide';
+            $id_mo = 1;
+            $type_b = 'silver';
+
+            $stmt = $this->conn->prepare("INSERT INTO boost (
+                duree_b, tarif_b, recu_b, etat_b, id_m, id_an, date_cr_b, id_mo, type_b
+            ) VALUES (?, ?, ?, ?, ?, ?, NOW(), ?, ?)");
+
+            $stmt->bind_param("idsssiss", $duree_b, $tarif_b, $recu_b, $etat_b, $id, $id_an, $id_mo, $type_b);
+            $stmt->execute();
+            $stmt->close();
+
+            // Commit transaction
+            $this->conn->commit();
+            return true;
+            //
+        } catch (Exception $e) {
+            $this->conn->rollback();
+            throw new Exception('cant create boost: ' . $e->getMessage());
+        }
     }
 }

@@ -5,8 +5,7 @@ require_once 'Services/Resource.php';
 require_once 'Services/Validator.php';
 require_once 'Services/Notification/Notify.php';
 
-//myresarvation = get resarvation for the client
-//monplanning = planning for membre or client 
+
 
 class ResarvationController extends Controller
 {
@@ -203,7 +202,7 @@ class ResarvationController extends Controller
   public function myPlanning($data)
   {
     try {
-      // Date handling and validation
+      // 
       $start = $data['StartDate'] ?? "2024-1-1 00:00:00";
       $final = $data['FinalDate'] ?? date("Y-m-d H:i:s");
       //
@@ -214,7 +213,7 @@ class ResarvationController extends Controller
       $auth = new Auth();
       $user = $auth->authMiddleware();
 
-      // Fetch raw data based on role
+      // 
       if ($user['role'] == 'membre') {
         $rawData = $this->resarvation->ReservationsByDateMembre($start, $final, $user['sub']);
         $roleKey = 'client';

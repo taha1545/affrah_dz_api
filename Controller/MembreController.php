@@ -4,14 +4,6 @@ require_once 'Services/Collection.php';
 require_once 'Services/Resource.php';
 require_once 'Services/Validator.php';
 
-// index = all user fetch
-// show = one user fetch 
-// create = for signup 
-// update to update user data
-// show image to get image for membre
-//login = login user 
-// otp and forgetpassword = for forget password logic it send mail to membre for otp check 
-// updateimage = to update image for membre  
 
 class MembreController  extends Controller
 {
@@ -54,10 +46,12 @@ class MembreController  extends Controller
     }
   }
 
-  // signup membre 
+  
   public function create($data)
   {
     try {
+      //
+      $code = $data['code'] ?? null;
       //validation
       $valid = new Validator();
       $data = $valid->validateData($data, 'member');
@@ -67,10 +61,16 @@ class MembreController  extends Controller
       $data = Resource::GetMembre($data);
       //create  membre 
       $id = $this->membre->create($data);
+      //
+      $CodeUse = false;
+      if (isset($code)) {
+        $CodeUse = $this->membre->AddPointCoins($code);
+      }
       // return secces for signup 
       return [
         'status' => 'success',
         'message' => 'successfully created. wait for your request to be submitted',
+        'codeuse' => $CodeUse
       ];
     } catch (Exception $e) {
       // if empty message docode than it means its server error not 421 
@@ -222,9 +222,12 @@ class MembreController  extends Controller
       //
       http_response_code(200);
       return ['status' => 'success', 'token' => $token];
-    } catch (Exception) {
+    } catch (Exception $e) {
       http_response_code(500);
-      return ['status' => 'error', 'message' => 'Your request is not yet activated. Please try again later.'];
+      return [
+        'status' => 'error',
+        'message' =>  $e->getMessage()
+      ];
     }
   }
 
@@ -326,6 +329,30 @@ class MembreController  extends Controller
       return [
         'status' => 'error',
         'message' => 'cant update this image'
+      ];
+    }
+  }
+
+  public function FreeBoost($id_an)
+  {
+    try {
+      //auth
+      $auth = new Auth();
+      $user = $auth->checkRole(['membre']);
+      //
+      $this->membre->createBoostForMembre($user['sub'], $id_an);
+      //
+      return [
+        'status' => true,
+        'message' => "boost created succesfly"
+      ];
+      //
+    } catch (Exception $e) {
+      // Handle error
+      http_response_code(500);
+      return [
+        'status' => 'error',
+        'message' => $e->getMessage()
       ];
     }
   }

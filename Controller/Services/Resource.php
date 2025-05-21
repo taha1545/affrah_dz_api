@@ -1,9 +1,5 @@
 <?php
 
-// resource for change db colums to names canbe used in api
-//  get and update work to take data and make it in db
-//  return get from db and return it to front 
-
 
 class Resource
 {
@@ -24,7 +20,7 @@ class Resource
             'photo_c' => isset($data['image']['tmp_name']) && is_file($data['image']['tmp_name'])
                 ? file_get_contents($data['image']['tmp_name'])
                 : null,
-            'fcm_token' => $data['fcm'] ?? null
+            'fcm_token' => $data['fcm'] ?? null,
         ];
     }
     public static function UpdateClient($data)
@@ -244,7 +240,8 @@ class Resource
             'signale' =>  "non",
             'id_mo' => 1,
             'fcm_token' => $data['fcm'] ?? null,
-            'photo_m' => file_get_contents($data['image']['tmp_name'])  ?? null
+            'photo_m' => file_get_contents($data['image']['tmp_name'])  ?? null,
+            'code' => substr(uniqid(), 0, 7)
         ];
     }
 
@@ -259,6 +256,8 @@ class Resource
             'location' => $data['adresse_m'],
             'phone' => $data['tel_m'],
             'mobail' => $data['mobil_m'],
+            'code' => $data['code'] ?? null,
+            'code_use' => $data['code_use'] ?? 0
         ];
     }
 

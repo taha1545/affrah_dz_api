@@ -1,10 +1,7 @@
 <?php
 require_once __DIR__ . '/../Controller.php';
 
-// validation rules for all tables
-// validatedata methode = to generate validation rules and check them
-// validate image 
-// validate video
+
 
 class Validator extends Controller
 {

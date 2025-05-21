@@ -7,19 +7,6 @@ require_once 'Services/UploadVideo.php';
 require_once 'Services/Filter.php';
 require_once 'Services/auth.php';
 
-// index = fetch all  annonces
-// show = fetch annonce
-//create and update and delete annonce
-// showcategorie = show all categorie that existe 
-//showvip = show annonce that have gold boost
-// show gold = show annonces that have silver boost
-//visite = like show but it update visisites (seen)
-// like = like annonce and dislike 
-//myannonce =  show all my annonce
-// myfavoris = show all my favoris annonce
-// search  =  search in annonce
-// annoncebymembre =  show all annonce from this membre 
-// allowed action is array of each categoire and allowed action for client to do (resarve or contact)
 
 
 class AnnonceController  extends Controller
@@ -271,13 +258,34 @@ class AnnonceController  extends Controller
 
   public function showvip($query = null)
   {
+    //auth
+    $auth = new Auth();
+    $user = $auth->getuser();
+    //
+    $wilaya = null;
+    //
+    if (isset($user)) {
+      $userId = $user['sub'];
+      $role = $user['role'];
+      //
+      if ($role === 'membre') {
+        $userget = $this->membre->find($userId, 'id_m');
+        $wilaya = $userget['ville_m'] ?? null;
+      } else {
+        $userget = $this->client->find($userId, 'id_c');
+        $wilaya = $userget['ville_c'] ?? null;
+      }
+    }
+
+    //
     $page = $query['page'] ?? 1;
     unset($query['page']);
     //
     try {
       // get gold
-      $info = $query ? $this->annonce->whereVip(Filter::Filterquery($query, 'annonce'), $page)
-        : $this->annonce->allvip($page);
+      $info = $query
+        ? $this->annonce->whereVip(Filter::Filterquery($query, 'annonce'), $page)
+        : $this->annonce->allvip($page, 30, $wilaya);
       // resource
       $data = $info['data'];
       $paginate = $info['paginate'];
@@ -286,7 +294,8 @@ class AnnonceController  extends Controller
         'status' => 'success',
         'message' => 'data retrieved successfully',
         'data' => Collection::returnAnnounces($data),
-        'info' => $paginate
+        'info' => $paginate,
+        'wilaya' => $wilaya
       ];
     } catch (Exception $e) {
       http_response_code(500);

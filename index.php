@@ -1,20 +1,20 @@
 <?php
 require 'vendor/autoload.php';
 
-//start
+//buffer
 ob_start();
 
-// Define CORS headers
+//
 header("Access-Control-Allow-Origin: * ");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 
-// Use autoloading for controllers 
+// controllers 
 spl_autoload_register(function ($class) {
   include 'Controller/' . $class . '.php';
 });
 
-// Initialize controllers (lazy loading can be implemented if needed)
+// 
 $clientController = new ClientController();
 $membreController = new MembreController();
 $resarvationController = new ResarvationController();
@@ -25,12 +25,12 @@ $boostController = new BoostController();
 $imagesController = new ImageController();
 $worker = new Worker();
 
-// Set content type to JSON
+//  JSON
 header('Content-Type: application/json');
-// get URL and method
+//  URL + method
 $url = trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
 $method = $_SERVER['REQUEST_METHOD'];
-// get query and data
+//  query + data
 $query = [];
 parse_str($_SERVER['QUERY_STRING'] ?? '', $query);
 //
@@ -61,7 +61,7 @@ if ($method === 'POST') {
   $data = json_decode($rawInput, true) ?? [];
 }
 
-// routing
+// rotes
 $router = [
   'GET' => [
     //
@@ -115,6 +115,7 @@ $router = [
     'membre/forget' => fn() => $membreController->updatepassword($data),
     'membre/OTP' => fn() => $membreController->OTP($data),
     'membre/image/update/(\d+)' => fn($id) => $membreController->updateimage($id, $data),
+    'boostbypoint/(\d+)' => fn($id) => $membreController->FreeBoost($id),
     //
     'resarvation' => fn() => $resarvationController->create($data),
     'annonce' => fn() => $annonceController->create($data),
@@ -155,7 +156,7 @@ foreach ($router[$method] as $route => $action) {
     break;
   }
 }
-//
+// not found
 if (!$matched) {
   http_response_code(404);
   $result = [
@@ -163,7 +164,7 @@ if (!$matched) {
     'message' => "Request endpoint not found",
   ];
 }
-// close connection and return result 
+// close connection +  result 
 Database::closeConnection();
 //
 echo json_encode($result);

@@ -38,7 +38,7 @@ class Worker extends Controller
     public function WorkerStart()
     {
         while (true) {
-            // fetch not proccesed notification
+            // 
             $notifications = $this->resarvation->GetNotify();
             $message = [];
             //
@@ -46,10 +46,10 @@ class Worker extends Controller
                 foreach ($notifications as $row) {
                     $id_notify = $row['id'];
 
-                    // Send FCM notification
+                    // 
                     $result = $this->notify->sendFCM($row['fcm_token'], $row['title'], $row['message']);
 
-                    // Update status based on result
+                    //
                     if ($result['success']) {
                         $this->resarvation->UpdateStatus($id_notify, 'done');
                         echo "Notification ID: $id_notify processed successfully.\n";
@@ -62,7 +62,7 @@ class Worker extends Controller
             } else {
                 echo "No new notifications. Sleeping for 2 minutes...\n";
             }
-            // Sleep for 15  minutes before checking again
+            // 
             sleep(900);
         }
     }

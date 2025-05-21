@@ -6,15 +6,7 @@ require_once 'Services/Validator.php';
 require_once 'Services/auth.php';
 require_once 'Services/Mail.php';
 
-// index = all user fetch
-// show = one user fetch 
-// create = for signup 
-// update to update user data
-// show image to get image for client
-//login = login user 
-// otp and forgetpassword = for forget password logic it send mail to client for otp check 
-// updateimage = to update image for client  
-// userbytoken = to get data from token (just for test in postman)
+
 
 class ClientController extends Controller
 {
@@ -63,6 +55,8 @@ class ClientController extends Controller
   public function create($data)
   {
     try {
+      //
+      $code = $data['code'] ?? null;
       //validation
       $valid = new Validator();
       $data = $valid->validateData($data, 'client');
@@ -74,6 +68,11 @@ class ClientController extends Controller
       $data = Resource::GetClient($data);
       //create in db
       $id = $this->client->create($data);
+      //
+      $CodeUse = false;
+      if (isset($code)) {
+        $CodeUse = $this->client->AddPointCoins($code);
+      }
       //generate token 
       $auth = new Auth();
       $token = $auth->generateToken($id, 'client');
@@ -83,6 +82,7 @@ class ClientController extends Controller
         'status' => 'success',
         'message' => 'data created success',
         'token' => $token,
+        'codeuse' => $CodeUse
       ];
       // catch errors 
     } catch (Exception $e) {
@@ -93,7 +93,7 @@ class ClientController extends Controller
       //
       return [
         'status' => 'error',
-        'message' => json_decode($e->getMessage()) ?? "Can't SignIn Try Later",
+        'message' => json_decode($e->getMessage()) ?? $e->getMessage(),
       ];
     }
   }

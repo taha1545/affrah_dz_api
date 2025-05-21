@@ -29,8 +29,7 @@ class Notify
         }
     }
 
-    //create in db 
-    // worker 
+   
 }
 
 
